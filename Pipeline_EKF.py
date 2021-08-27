@@ -100,7 +100,6 @@ class Pipeline_EKF:
                 y_cv = cv_input[j, :, :]
 
                 x_Net_cv = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
-                cv_target = cv_target.to(dev, non_blocking=True)
 
                 for t in range(0, SysModel.T_test):
                     x_Net_cv[:,t] = self.model(y_cv[:,t])
@@ -162,7 +161,6 @@ class Pipeline_EKF:
                 
 
                 x_Net_training = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
-                train_target = train_target.to(dev, non_blocking=True)
                 
                 for t in range(0, SysModel.T):
                     x_Net_training[:,t] = self.model(y_training[:,t])
@@ -262,7 +260,6 @@ class Pipeline_EKF:
             y_mdl_tst = test_input[j, :, :]
 
             x_Net_mdl_tst = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
-            test_target = test_target.to(dev, non_blocking=True)
             
             for t in range(0, SysModel.T_test):
                 x_Net_mdl_tst[:,t] = Model(y_mdl_tst[:,t])

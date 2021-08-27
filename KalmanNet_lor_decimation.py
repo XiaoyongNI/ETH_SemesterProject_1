@@ -8,8 +8,6 @@ from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 
 from KalmanNet_nn import KalmanNetNN
-from KalmanNet_train import NNTrain
-from KalmanNet_test import NNTest
 
 from PF_test import PFTest
 from KalmanNet_nn import KalmanNetNN
@@ -95,9 +93,13 @@ for rindex in range(0, len(r)):
    KNet_model = KalmanNetNN()
    KNet_model.NNBuild(sys_model)
    ## Train Neural Network
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = NNTrain(sys_model, Model, cv_input_long, cv_target_long, train_input, train_target, path_results, sequential_training)
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results, sequential_training)
    ## Test Neural Network
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = NNTest(sys_model, test_input, test_target, path_results)
+   # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
    # Print MSE Cross Validation
    print("MSE Test:", MSE_test_dB_avg, "[dB]")
    # Save trajectories
