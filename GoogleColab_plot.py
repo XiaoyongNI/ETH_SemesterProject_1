@@ -9,8 +9,6 @@ from Pipeline_EKF import Pipeline_EKF
 
 from Extended_sysmdl import SystemModel
 from Extended_data import DecimateData
-from Extended_RTSNet_nn import RTSNetNN
-from Extended_KalmanNet_nn import KalmanNetNN
 from Extended_data import DataGen,DataGen_True, Decimate_and_perturbate_Data,Short_Traj_Split
 from Extended_data import N_E, N_CV, N_T
 

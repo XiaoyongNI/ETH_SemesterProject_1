@@ -9,6 +9,8 @@ from KalmanNet_nn import KalmanNetNN
 if (torch.cuda.is_available()):
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
+nGRU = 2
+
 class RTSNetNN(KalmanNetNN):
 
     ###################
@@ -20,10 +22,10 @@ class RTSNetNN(KalmanNetNN):
     #############
     ### Build ###
     #############
-    def Build(self, ssModel):
+    def Build(self, ssModel, infoString = 'fullInfo'):
 
-        self.InitSystemDynamics(ssModel.F, ssModel.H)
-
+        self.InitSystemDynamics(ssModel.f, ssModel.h, ssModel.m, ssModel.n, infoString = 'fullInfo')
+        self.InitSequence(ssModel.m1x_0, ssModel.T)
         # Number of neurons in the 1st hidden layer
         H1_KNet = (ssModel.m + ssModel.n) * (10) * 8
 
@@ -45,7 +47,7 @@ class RTSNetNN(KalmanNetNN):
     #################################################
     def InitRTSGainNet(self, H1, H2):
         # Input Dimensions
-        D_in = self.m + self.m  # Delta x_t, x_t+1|T
+        D_in = self.m + self.m + self.m  # 3 features
 
         # Output Dimensions
         D_out = self.m * self.m  # Backward Smoother Gain
@@ -67,7 +69,7 @@ class RTSNetNN(KalmanNetNN):
         # Hidden Dimension
         self.hidden_dim = (self.m * self.m + self.m * self.m) * 10
         # Number of Layers
-        self.n_layers = 1
+        self.n_layers = nGRU
         # Batch Size
         self.batch_size = 1
         # Input Sequence Length
@@ -104,13 +106,13 @@ class RTSNetNN(KalmanNetNN):
     ### Initialize Backward Sequence ###
     ####################################
     def InitBackward(self, filter_x):
-        self.s_m1x_nexttime = filter_x
+        self.s_m1x_nexttime = torch.squeeze(filter_x)
 
     ##############################
     ### Innovation Computation ###
     ##############################
     def S_Innovation(self, filter_x):
-        self.filter_x_prior = torch.matmul(self.F, filter_x)
+        self.filter_x_prior = self.f(filter_x)
         self.dx = self.s_m1x_nexttime - self.filter_x_prior
 
     ################################
@@ -134,8 +136,14 @@ class RTSNetNN(KalmanNetNN):
             dm1x_input2_reshape = torch.squeeze(dm1x_input2)
             dm1x_input2_norm = func.normalize(dm1x_input2_reshape, p=2, dim=0, eps=1e-12, out=None)
 
+        # Feature 7:  x_t+1|T - x_t+1|t
+        dm1x_f7 = self.s_m1x_nexttime - filter_x_nexttime
+        dm1x_f7_reshape = torch.squeeze(dm1x_f7)
+        dm1x_f7_norm = func.normalize(dm1x_f7_reshape, p=2, dim=0, eps=1e-12, out=None)
+        
+
         # RTSGain Net Input
-        SGainNet_in = torch.cat([dm1x_tilde_norm, dm1x_input2_norm], dim=0)
+        SGainNet_in = torch.cat([dm1x_tilde_norm, dm1x_input2_norm,dm1x_f7_norm], dim=0)
 
         # Smoother Gain Network Step
         SG = self.RTSGain_step(SGainNet_in)
@@ -147,6 +155,9 @@ class RTSNetNN(KalmanNetNN):
     ### RTS Net Step ###
     ####################
     def RTSNet_step(self, filter_x, filter_x_nexttime, smoother_x_tplus2):
+        # filter_x = torch.squeeze(filter_x)
+        # filter_x_nexttime = torch.squeeze(filter_x_nexttime)
+        # smoother_x_tplus2 = torch.squeeze(smoother_x_tplus2)
         # Compute Innovation
         self.S_Innovation(filter_x)
 

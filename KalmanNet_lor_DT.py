@@ -10,9 +10,6 @@ from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 from Pipeline_EKF import Pipeline_EKF
 from PF_test import PFTest
 
-from Extended_RTSNet_nn import RTSNetNN
-from Extended_KalmanNet_nn import KalmanNetNN
-
 from datetime import datetime
 
 from KalmanNet_build import NNBuild
