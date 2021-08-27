@@ -47,7 +47,7 @@ class Pipeline_EKF:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learningRate, weight_decay=self.weightDecay)
 
 
-    def NNTrain(self, SysModel, Model, cv_input, cv_target, train_input, train_target, path_results, nclt=False, sequential_training=False, rnn=False, epochs=None, train_IC=None, CV_IC=None):
+    def NNTrain(self, SysModel, cv_input, cv_target, train_input, train_target, path_results, nclt=False, sequential_training=False, rnn=False, epochs=None, train_IC=None, CV_IC=None):
 
         N_E = train_input.size()[0]
         N_CV = cv_input.size()[0]
@@ -124,9 +124,9 @@ class Pipeline_EKF:
                 MSE_cv_dB_opt = MSE_cv_dB_epoch[ti]
                 MSE_cv_idx_opt = ti
                 if(rnn):
-                    torch.save(self.model, path_results+'best-model_rnn.pt')
+                    torch.save(self.model, path_results + 'best-model_rnn.pt')
                 else:
-                    torch.save(self.model, path_results+'best-model.pt')
+                    torch.save(self.model, path_results + 'best-model.pt')
 
             ###############################
             ### Training Sequence Batch ###
