@@ -12,9 +12,7 @@ from PF_test import PFTest
 
 from datetime import datetime
 
-from KalmanNet_build import NNBuild
-from KalmanNet_train import NNTrain
-from KalmanNet_test import NNTest
+from KalmanNet_nn import KalmanNetNN
 
 from Plot import Plot_extended as Plot
 
@@ -155,12 +153,14 @@ for rindex in range(0, len(qopt)):
    
    # KNet with model mismatch
    ## Build Neural Network
-   # Model = NNBuild(sys_model_partialf)
+   KNet_model = KalmanNetNN()
+   KNet_model.NNBuild(sys_model_partialf)
    Model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
    ## Train Neural Network
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = NNTrain(sys_model_partialf, Model, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model_partialf, Model, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
    ## Test Neural Network
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = NNTest(sys_model_partialf, test_input, test_target, path_results)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model_partialf, test_input, test_target, path_results)
    # Print MSE Cross Validation
    print("MSE Test:", MSE_test_dB_avg, "[dB]")
 

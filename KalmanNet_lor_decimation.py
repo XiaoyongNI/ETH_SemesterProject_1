@@ -7,7 +7,7 @@ from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_pertur
 from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 
-from KalmanNet_build import NNBuild
+from KalmanNet_nn import KalmanNetNN
 from KalmanNet_train import NNTrain
 from KalmanNet_test import NNTest
 
@@ -92,7 +92,8 @@ for rindex in range(0, len(r)):
    
    # KNet with model mismatch
    ## Build Neural Network
-   Model = NNBuild(sys_model)
+   KNet_model = KalmanNetNN()
+   KNet_model.NNBuild(sys_model)
    ## Train Neural Network
    [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = NNTrain(sys_model, Model, cv_input_long, cv_target_long, train_input, train_target, path_results, sequential_training)
    ## Test Neural Network

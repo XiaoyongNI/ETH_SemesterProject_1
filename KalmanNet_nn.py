@@ -27,6 +27,19 @@ class KalmanNetNN(torch.nn.Module):
     ###################
     def __init__(self):
         super().__init__()
+    
+    def NNBuild(self, SysModel):
+
+        self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n, infoString = "partialInfo")
+        self.InitSequence(SysModel.m1x_0, SysModel.m2x_0, SysModel.T)
+
+        # Number of neurons in the 1st hidden layer
+        #H1_KNet = (SysModel.m + SysModel.n) * (10) * 8
+
+        # Number of neurons in the 2nd hidden layer
+        #H2_KNet = (SysModel.m * SysModel.n) * 1 * (4)
+
+        self.InitKGainNet(SysModel.prior_Q, SysModel.prior_Sigma, SysModel.prior_S)
 
     ######################################
     ### Initialize Kalman Gain Network ###
