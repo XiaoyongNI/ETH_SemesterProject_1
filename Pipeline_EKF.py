@@ -52,18 +52,6 @@ class Pipeline_EKF:
         N_E = train_input.size()[0]
         N_CV = cv_input.size()[0]
 
-        Model.to(dev, non_blocking=True)
-
-
-        # MSE LOSS Function
-        loss_fn = nn.MSELoss(reduction='mean')
-
-        # Use the optim package to define an Optimizer that will update the weights of
-        # the model for us. Here we will use Adam; the optim package contains many other
-        # optimization algoriths. The first argument to the Adam constructor tells the
-        # optimizer which Tensors it should update.
-        optimizer = torch.optim.Adam(Model.parameters(), lr=self.learningRate, weight_decay=self.weightDecay)
-
         MSE_cv_linear_batch = torch.empty([N_CV]).to(dev, non_blocking=True)
         MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
         MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
@@ -92,10 +80,10 @@ class Pipeline_EKF:
             #################################
 
             # Cross Validation Mode
-            Model.eval()
+            self.model.eval()
 
             for j in range(0, N_CV):
-                Model.i = 0
+                self.model.i = 0
                 # Initialize next sequence
                 if(sequential_training):
                     if(nclt):
@@ -107,7 +95,7 @@ class Pipeline_EKF:
                 else:
                     init_conditions = SysModel.m1x_0
 
-                Model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)
+                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)
 
                 y_cv = cv_input[j, :, :]
 
@@ -115,7 +103,7 @@ class Pipeline_EKF:
                 cv_target = cv_target.to(dev, non_blocking=True)
 
                 for t in range(0, SysModel.T_test):
-                    x_Net_cv[:,t] = Model(y_cv[:,t])
+                    x_Net_cv[:,t] = self.model(y_cv[:,t])
                 
 
                 # Compute Training Loss
@@ -124,9 +112,9 @@ class Pipeline_EKF:
                         mask = torch.tensor([True,False,False,True,False,False])
                     else:
                         mask = torch.tensor([True,False,True,False])
-                    MSE_cv_linear_batch[j] = loss_fn(x_Net_cv[mask], cv_target[j, :, :]).item()
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv[mask], cv_target[j, :, :]).item()
                 else:
-                    MSE_cv_linear_batch[j] = loss_fn(x_Net_cv, cv_target[j, :, :]).item()
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv, cv_target[j, :, :]).item()
 
             # Average
             MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
@@ -137,24 +125,24 @@ class Pipeline_EKF:
                 MSE_cv_dB_opt = MSE_cv_dB_epoch[ti]
                 MSE_cv_idx_opt = ti
                 if(rnn):
-                    torch.save(Model, path_results+'best-model_rnn.pt')
+                    torch.save(self.model, path_results+'best-model_rnn.pt')
                 else:
-                    torch.save(Model, path_results+'best-model.pt')
+                    torch.save(self.model, path_results+'best-model.pt')
 
             ###############################
             ### Training Sequence Batch ###
             ###############################
 
             # Training Mode
-            Model.train()
+            self.model.train()
 
             # Init Hidden State
-            Model.init_hidden()
+            self.model.init_hidden()
 
             Batch_Optimizing_LOSS_sum = 0
 
             for j in range(0, self.N_B):
-                Model.i = 0
+                self.model.i = 0
                 n_e = random.randint(0, N_E - 1)
 
                 y_training = train_input[n_e, :, :]
@@ -170,14 +158,14 @@ class Pipeline_EKF:
                     init_conditions = SysModel.m1x_0
 
 
-                Model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
+                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
                 
 
                 x_Net_training = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
                 train_target = train_target.to(dev, non_blocking=True)
                 
                 for t in range(0, SysModel.T):
-                    x_Net_training[:,t] = Model(y_training[:,t])
+                    x_Net_training[:,t] = self.model(y_training[:,t])
 
                 # Compute Training Loss
                 #LOSS = loss_fn(x_Net_training, train_target[n_e, :, :])
@@ -186,9 +174,9 @@ class Pipeline_EKF:
                         mask = torch.tensor([True,False,False,True,False,False])
                     else:
                         mask = torch.tensor([True,False,True,False])
-                    LOSS = loss_fn(x_Net_training[mask], train_target[n_e, :, :])
+                    LOSS = self.loss_fn(x_Net_training[mask], train_target[n_e, :, :])
                 else:
-                    LOSS = loss_fn(x_Net_training, train_target[n_e, :, :])
+                    LOSS = self.loss_fn(x_Net_training, train_target[n_e, :, :])
 
                 MSE_train_linear_batch[j] = LOSS.item()
 
@@ -210,7 +198,7 @@ class Pipeline_EKF:
             # weights of the model). This is because by default, gradients are
             # accumulated in buffers( i.e, not overwritten) whenever .backward()
             # is called. Checkout docs of torch.autograd.backward for more details.
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
 
 
             # Backward pass: compute gradient of the loss with respect to model
@@ -223,7 +211,7 @@ class Pipeline_EKF:
 
             # Calling the step function on an Optimizer makes an update to its
             # parameters
-            optimizer.step()
+            self.optimizer.step()
 
             ########################
             ### Training Summary ###
