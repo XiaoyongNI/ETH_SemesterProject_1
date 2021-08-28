@@ -53,46 +53,46 @@ class RTSNetNN(KalmanNetNN):
         self.prior_Sigma = prior_Sigma       
 
 
-        # GRU to track Q
-        self.d_input_Q = self.m * in_mult
-        self.d_hidden_Q = self.m ** 2
-        self.GRU_Q = nn.GRU(self.d_input_Q, self.d_hidden_Q)
-        self.h_Q = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Q).to(dev, non_blocking=True)
+        # BW GRU to track Q
+        self.d_input_Q_bw = self.m * in_mult
+        self.d_hidden_Q_bw = self.m ** 2
+        self.GRU_Q_bw = nn.GRU(self.d_input_Q_bw, self.d_hidden_Q_bw)
+        self.h_Q_bw = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Q_bw).to(dev, non_blocking=True)
 
-        # GRU to track Sigma
-        self.d_input_Sigma = self.d_hidden_Q + self.m * in_mult
-        self.d_hidden_Sigma = self.m ** 2
-        self.GRU_Sigma = nn.GRU(self.d_input_Sigma, self.d_hidden_Sigma)
-        self.h_Sigma = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Sigma).to(dev, non_blocking=True)
+        # BW GRU to track Sigma
+        self.d_input_Sigma_bw = self.d_hidden_Q_bw + self.m * in_mult
+        self.d_hidden_Sigma_bw = self.m ** 2
+        self.GRU_Sigma_bw = nn.GRU(self.d_input_Sigma_bw, self.d_hidden_Sigma_bw)
+        self.h_Sigma_bw = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Sigma_bw).to(dev, non_blocking=True)
 
-        # Fully connected 1
-        self.d_input_FC1 = self.d_hidden_Sigma # + self.d_hidden_Q
-        self.d_output_FC1 = self.m * self.m
-        self.d_hidden_FC1 = self.d_input_FC1 * out_mult
-        self.FC1 = nn.Sequential(
-                nn.Linear(self.d_input_FC1, self.d_hidden_FC1),
+        # BW Fully connected 1
+        self.d_input_FC1_bw = self.d_hidden_Sigma_bw # + self.d_hidden_Q
+        self.d_output_FC1_bw = self.m * self.m
+        self.d_hidden_FC1_bw = self.d_input_FC1_bw * out_mult
+        self.FC1_bw = nn.Sequential(
+                nn.Linear(self.d_input_FC1_bw, self.d_hidden_FC1_bw),
                 nn.ReLU(),
-                nn.Linear(self.d_hidden_FC1, self.d_output_FC1))
+                nn.Linear(self.d_hidden_FC1_bw, self.d_output_FC1_bw))
 
-        # Fully connected 2
-        self.d_input_FC2 = self.d_hidden_Sigma + self.d_output_FC1
-        self.d_output_FC2 = self.d_hidden_Sigma
-        self.FC2 = nn.Sequential(
-                nn.Linear(self.d_input_FC2, self.d_output_FC2),
+        # BW Fully connected 2
+        self.d_input_FC2_bw = self.d_hidden_Sigma_bw + self.d_output_FC1_bw
+        self.d_output_FC2_bw = self.d_hidden_Sigma_bw
+        self.FC2_bw = nn.Sequential(
+                nn.Linear(self.d_input_FC2_bw, self.d_output_FC2_bw),
                 nn.ReLU())
         
-        # Fully connected 3
-        self.d_input_FC3 = self.m
-        self.d_output_FC3 = self.m * in_mult
-        self.FC3 = nn.Sequential(
-                nn.Linear(self.d_input_FC3, self.d_output_FC3),
+        # BW Fully connected 3
+        self.d_input_FC3_bw = self.m
+        self.d_output_FC3_bw = self.m * in_mult
+        self.FC3_bw = nn.Sequential(
+                nn.Linear(self.d_input_FC3_bw, self.d_output_FC3_bw),
                 nn.ReLU())
 
-        # Fully connected 4
-        self.d_input_FC4 = 2 * self.m
-        self.d_output_FC4 = 2 * self.m * in_mult
-        self.FC4 = nn.Sequential(
-                nn.Linear(self.d_input_FC4, self.d_output_FC4),
+        # BW Fully connected 4
+        self.d_input_FC4_bw = 2 * self.m
+        self.d_output_FC4_bw = 2 * self.m * in_mult
+        self.FC4_bw = nn.Sequential(
+                nn.Linear(self.d_input_FC4_bw, self.d_output_FC4_bw),
                 nn.ReLU())
 
     ####################################
@@ -180,11 +180,11 @@ class RTSNetNN(KalmanNetNN):
         
         # FC 3
         in_FC3 = bw_update_diff
-        out_FC3 = self.FC3(in_FC3)
+        out_FC3 = self.FC3_bw(in_FC3)
 
         # Q-GRU
         in_Q = out_FC3
-        out_Q, self.h_Q = self.GRU_Q(in_Q, self.h_Q)
+        out_Q, self.h_Q_bw = self.GRU_Q_bw(in_Q, self.h_Q_bw)
 
         # FC 4
         in_FC4 = torch.cat((bw_innov_diff, bw_evol_diff), 2)
@@ -192,11 +192,11 @@ class RTSNetNN(KalmanNetNN):
 
         # Sigma_GRU
         in_Sigma = torch.cat((out_Q, out_FC4), 2)
-        out_Sigma, self.h_Sigma = self.GRU_Sigma(in_Sigma, self.h_Sigma)
+        out_Sigma, self.h_Sigma_bw = self.GRU_Sigma_bw(in_Sigma, self.h_Sigma_bw)
 
         # FC 1
         in_FC1 = out_Sigma
-        out_FC1 = self.FC1(in_FC1)
+        out_FC1 = self.FC1_bw(in_FC1)
 
         #####################
         ### Backward Flow ###
@@ -204,10 +204,10 @@ class RTSNetNN(KalmanNetNN):
 
         # FC 2
         in_FC2 = torch.cat((out_Sigma, out_FC1), 2)
-        out_FC2 = self.FC2(in_FC2)
+        out_FC2 = self.FC2_bw(in_FC2)
 
         # updating hidden state of the Sigma-GRU
-        self.h_Sigma = out_FC2
+        self.h_Sigma_bw = out_FC2
 
         return out_FC1
 
