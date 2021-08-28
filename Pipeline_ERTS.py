@@ -197,7 +197,7 @@ class Pipeline_ERTS:
             # Backward pass: compute gradient of the loss with respect to model
             # parameters
             Batch_Optimizing_LOSS_mean = Batch_Optimizing_LOSS_sum / self.N_B
-            Batch_Optimizing_LOSS_mean.backward()
+            Batch_Optimizing_LOSS_mean.backward(retain_graph=True)
 
             # Calling the step function on an Optimizer makes an update to its
             # parameters

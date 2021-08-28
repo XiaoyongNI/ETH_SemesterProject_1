@@ -188,7 +188,7 @@ class RTSNetNN(KalmanNetNN):
 
         # FC 4
         in_FC4 = torch.cat((bw_innov_diff, bw_evol_diff), 2)
-        out_FC4 = self.FC6(in_FC4)
+        out_FC4 = self.FC4_bw(in_FC4)
 
         # Sigma_GRU
         in_Sigma = torch.cat((out_Q, out_FC4), 2)
