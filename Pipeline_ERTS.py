@@ -53,13 +53,13 @@ class Pipeline_ERTS:
         self.N_E = train_input.size()[0]
         self.N_CV = cv_input.size()[0]
 
-        MSE_cv_linear_batch = torch.empty([self.N_CV])
-        self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs])
-        self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs])
+        MSE_cv_linear_batch = torch.empty([N_CV]).to(dev, non_blocking=True)
+        self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
-        MSE_train_linear_batch = torch.empty([self.N_B])
-        self.MSE_train_linear_epoch = torch.empty([self.N_Epochs])
-        self.MSE_train_dB_epoch = torch.empty([self.N_Epochs])
+        MSE_train_linear_batch = torch.empty([self.N_B]).to(dev, non_blocking=True)
+        self.MSE_train_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_train_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
         ##############
         ### Epochs ###
@@ -97,8 +97,8 @@ class Pipeline_ERTS:
                 self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)   
                 y_cv = cv_input[j, :, :]
 
-                x_out_cv_forward = torch.empty(SysModel.m, SysModel.T)
-                x_out_cv = torch.empty(SysModel.m, SysModel.T)
+                x_out_cv_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
+                x_out_cv = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
                 for t in range(0, SysModel.T):
                     x_out_cv_forward[:, t] = self.model(y_cv[:, t], None, None, None)
                 x_out_cv[:, SysModel.T-1] = x_out_cv_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T
@@ -129,16 +129,17 @@ class Pipeline_ERTS:
             ###############################
             ### Training Sequence Batch ###
             ###############################
-
+            self.optimizer.zero_grad()
             # Training Mode
             self.model.train()
-            with torch.autograd.set_detect_anomaly(True):
-                # Init Hidden State
-                self.model.init_hidden()
+            
+            # Init Hidden State
+            self.model.init_hidden()
 
-                Batch_Optimizing_LOSS_sum = 0
+            Batch_Optimizing_LOSS_sum = 0
 
-                for j in range(0, self.N_B):
+            for j in range(0, self.N_B):
+                with torch.autograd.set_detect_anomaly(True):
                     self.model.i = 0
                     n_e = random.randint(0, self.N_E - 1)
                     if(sequential_training):
@@ -154,8 +155,8 @@ class Pipeline_ERTS:
                     y_training = train_input[n_e, :, :]
                     self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
 
-                    x_out_training_forward = torch.empty(SysModel.m, SysModel.T)
-                    x_out_training = torch.empty(SysModel.m, SysModel.T)
+                    x_out_training_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
+                    x_out_training = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
                     for t in range(0, SysModel.T):
                         x_out_training_forward[:, t] = self.model(y_training[:, t], None, None, None)
                     x_out_training[:, SysModel.T-1] = x_out_training_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T 
@@ -192,7 +193,7 @@ class Pipeline_ERTS:
             # accumulated in buffers( i.e, not overwritten) whenever .backward()
             # is called. Checkout docs of torch.autograd.backward for more details.
 
-            self.optimizer.zero_grad()
+            
 
             # Backward pass: compute gradient of the loss with respect to model
             # parameters
@@ -247,10 +248,8 @@ class Pipeline_ERTS:
 
             y_mdl_tst = test_input[j, :, :]
 
-            self.model.InitSequence(SysModel.m1x_0, SysModel.T_test)
-
-            x_out_test_forward = torch.empty(SysModel.m,SysModel.T_test)
-            x_out_test = torch.empty(SysModel.m, SysModel.T_test)
+            x_out_test_forward = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+            x_out_test = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
             for t in range(0, SysModel.T_test):
                 x_out_test_forward[:, t] = self.model(y_mdl_tst[:, t], None, None, None)
             x_out_test[:, SysModel.T_test-1] = x_out_test_forward[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 

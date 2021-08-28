@@ -193,6 +193,7 @@ for rindex in range(0, len(qopt)):
 
    # RTSNet with model mismatch
    ## Build Neural Network
+   print("Start RTSNet pipeline")
    RTSNet_model = RTSNetNN()
    RTSNet_model.NNBuild(sys_model_partialf)
    ## Train Neural Network

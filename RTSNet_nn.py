@@ -218,6 +218,7 @@ class RTSNetNN(KalmanNetNN):
         if yt is None:
             return self.RTSNet_step(filter_x, filter_x_nexttime, smoother_x_tplus2)
         else:
+            yt = yt.to(dev, non_blocking=True)
             return self.KNet_step(yt)
 
         
