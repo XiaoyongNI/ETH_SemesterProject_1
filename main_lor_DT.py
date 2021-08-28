@@ -3,7 +3,7 @@ torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
 import torch.nn as nn
 from EKF_test import EKFTest
 from Extended_RTS_Smoother_test import S_Test
-from KalmanNet_sysmdl import SystemModel
+from sysmdl import SystemModel
 from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_perturbate_Data,Short_Traj_Split
 from Extended_data import N_E, N_CV, N_T
 from Pipeline_ERTS import Pipeline_ERTS as Pipeline
@@ -13,6 +13,7 @@ from PF_test import PFTest
 from datetime import datetime
 
 from KalmanNet_nn import KalmanNetNN
+from RTSNet_nn import RTSNetNN
 
 from Plot import Plot_extended as Plot
 
@@ -48,7 +49,7 @@ print("Current Time =", strTime)
 ######################################
 offset = 0
 sequential_training = False
-path_results = 'KNet/'
+path_results = 'ERTSNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data/T2000_NT100' + '/'
 data_gen = 'data_gen.pt'
 # data_gen_file = torch.load(DatafolderName+data_gen, map_location=cuda0)
@@ -153,18 +154,18 @@ for rindex in range(0, len(qopt)):
    
    # KNet with model mismatch
    ## Build Neural Network
-   KNet_model = KalmanNetNN()
-   KNet_model.NNBuild(sys_model_partialf)
-   ## Train Neural Network
-   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   KNet_Pipeline.setModel(KNet_model)
-   KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model_partialf, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
-   ## Test Neural Network
-   # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model_partialf, test_input, test_target, path_results)
-   # Print MSE Cross Validation
-   print("MSE Test:", MSE_test_dB_avg, "[dB]")
+   # KNet_model = KalmanNetNN()
+   # KNet_model.NNBuild(sys_model_partialf)
+   # ## Train Neural Network
+   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   # KNet_Pipeline.setModel(KNet_model)
+   # KNet_Pipeline.setssModel(sys_model_partialf)
+   # KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model_partialf, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
+   # ## Test Neural Network
+   # # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
+   # [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model_partialf, test_input, test_target, path_results)
+
 
    # # Save trajectories
    # # trajfolderName = 'KNet' + '/'
@@ -189,6 +190,21 @@ for rindex in range(0, len(qopt)):
    #             'KNet_MSE_test_linear_arr': KNet_MSE_test_linear_arr,
    #             'KNet_MSE_test_dB_avg': KNet_MSE_test_dB_avg,
    #             }, EKFfolderName+EKFResultName)
+
+   # RTSNet with model mismatch
+   ## Build Neural Network
+   RTSNet_model = RTSNetNN()
+   RTSNet_model.NNBuild(sys_model_partialf)
+   ## Train Neural Network
+   RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
+   RTSNet_Pipeline.setssModel(sys_model_partialf)
+   RTSNet_Pipeline.setModel(RTSNet_model)
+   RTSNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model_partialf, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
+   ## Test Neural Network
+   # RTSNetNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model_partialf, test_input, test_target, path_results)
+
 
    
 

@@ -95,13 +95,13 @@ class Pipeline_EKF:
                 else:
                     init_conditions = SysModel.m1x_0
 
-                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)
+                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
 
                 y_cv = cv_input[j, :, :]
 
-                x_Net_cv = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                x_Net_cv = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
 
-                for t in range(0, SysModel.T_test):
+                for t in range(0, SysModel.T):
                     x_Net_cv[:,t] = self.model(y_cv[:,t])
                 
 
@@ -286,6 +286,10 @@ class Pipeline_EKF:
         # Average
         MSE_test_linear_avg = torch.mean(MSE_test_linear_arr)
         MSE_test_dB_avg = 10 * torch.log10(MSE_test_linear_avg)
+
+        # Print MSE Cross Validation
+        str = self.modelName + "-" + "MSE Test:"
+        print(str, MSE_test_dB_avg, "[dB]")
 
         return [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KGain_array, x_out_array, t]
 

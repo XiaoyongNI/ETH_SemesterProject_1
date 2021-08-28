@@ -1,7 +1,7 @@
 import torch
 torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
 
-from KalmanNet_sysmdl import SystemModel
+from sysmdl import SystemModel
 from KalmanNet_data import DataGen, DataLoader_GPU
 from KalmanNet_data import F, H, T, T_test, m1_0, m2_0
 

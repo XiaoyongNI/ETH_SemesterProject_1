@@ -6,10 +6,15 @@ import torch.nn.functional as func
 
 from KalmanNet_nn import KalmanNetNN
 
-if (torch.cuda.is_available()):
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+if torch.cuda.is_available():
+    dev = torch.device("cuda:0")
+    torch.set_default_tensor_type("torch.cuda.FloatTensor")
+else:
+    dev = torch.device("cpu")
 
-nGRU = 2
+in_mult = 5
+out_mult = 40
+nGRU = 4
 
 class RTSNetNN(KalmanNetNN):
 
@@ -22,85 +27,73 @@ class RTSNetNN(KalmanNetNN):
     #############
     ### Build ###
     #############
-    def Build(self, ssModel, infoString = 'fullInfo'):
+    def NNBuild(self, ssModel, infoString = 'fullInfo'):
 
         self.InitSystemDynamics(ssModel.f, ssModel.h, ssModel.m, ssModel.n, infoString = 'fullInfo')
-        self.InitSequence(ssModel.m1x_0, ssModel.T)
-        # Number of neurons in the 1st hidden layer
-        H1_KNet = (ssModel.m + ssModel.n) * (10) * 8
+        self.InitSequence(ssModel.m1x_0, ssModel.m2x_0, ssModel.T)
 
-        # Number of neurons in the 2nd hidden layer
-        H2_KNet = (ssModel.m * ssModel.n) * 1 * (4)
+        self.InitKGainNet(ssModel.prior_Q, ssModel.prior_Sigma, ssModel.prior_S)
 
-        self.InitKGainNet(H1_KNet, H2_KNet)
+        # # Number of neurons in the 1st hidden layer
+        # H1_RTSNet = (ssModel.m + ssModel.m) * (10) * 8
 
-        # Number of neurons in the 1st hidden layer
-        H1_RTSNet = (ssModel.m + ssModel.m) * (10) * 8
+        # # Number of neurons in the 2nd hidden layer
+        # H2_RTSNet = (ssModel.m * ssModel.m) * 1 * (4)
 
-        # Number of neurons in the 2nd hidden layer
-        H2_RTSNet = (ssModel.m * ssModel.m) * 1 * (4)
-
-        self.InitRTSGainNet(H1_RTSNet, H2_RTSNet)
+        self.InitRTSGainNet(ssModel.Q, ssModel.prior_Sigma)
 
     #################################################
     ### Initialize Backward Smoother Gain Network ###
     #################################################
-    def InitRTSGainNet(self, H1, H2):
-        # Input Dimensions
-        D_in = self.m + self.m + self.m  # 3 features
-
-        # Output Dimensions
-        D_out = self.m * self.m  # Backward Smoother Gain
-
-        ###################
-        ### Input Layer ###
-        ###################
-        # Linear Layer
-        self.SG_l1 = torch.nn.Linear(D_in, H1, bias=True)
-
-        # ReLU (Rectified Linear Unit) Activation Function
-        self.SG_relu1 = torch.nn.ReLU()
-
-        ###########
-        ### GRU ###
-        ###########
-        # Input Dimension
-        self.input_dim = H1
-        # Hidden Dimension
-        self.hidden_dim = (self.m * self.m + self.m * self.m) * 10
-        # Number of Layers
-        self.n_layers = nGRU
-        # Batch Size
-        self.batch_size = 1
-        # Input Sequence Length
+    def InitRTSGainNet(self, prior_Q, prior_Sigma):
         self.seq_len_input = 1
-        # Hidden Sequence Length
-        self.seq_len_hidden = self.n_layers
+        self.batch_size = 1
 
-        # batch_first = False
-        # dropout = 0.1 ;
+        self.prior_Q = prior_Q
+        self.prior_Sigma = prior_Sigma       
 
-        # Initialize a Tensor for GRU Input
-        # self.GRU_in = torch.empty(self.seq_len_input, self.batch_size, self.input_dim)
 
-        # Initialize a Tensor for Hidden State
-        self.hn = torch.randn(self.seq_len_hidden, self.batch_size, self.hidden_dim).to(self.device,non_blocking = True)
+        # GRU to track Q
+        self.d_input_Q = self.m * in_mult
+        self.d_hidden_Q = self.m ** 2
+        self.GRU_Q = nn.GRU(self.d_input_Q, self.d_hidden_Q)
+        self.h_Q = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Q).to(dev, non_blocking=True)
 
-        # Iniatialize GRU Layer
-        self.rnn_GRU = nn.GRU(self.input_dim, self.hidden_dim, self.n_layers)
+        # GRU to track Sigma
+        self.d_input_Sigma = self.d_hidden_Q + self.m * in_mult
+        self.d_hidden_Sigma = self.m ** 2
+        self.GRU_Sigma = nn.GRU(self.d_input_Sigma, self.d_hidden_Sigma)
+        self.h_Sigma = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Sigma).to(dev, non_blocking=True)
 
-        ####################
-        ### Hidden Layer ###
-        ####################
-        self.SG_l2 = torch.nn.Linear(self.hidden_dim, H2, bias=True)
+        # Fully connected 1
+        self.d_input_FC1 = self.d_hidden_Sigma # + self.d_hidden_Q
+        self.d_output_FC1 = self.m * self.m
+        self.d_hidden_FC1 = self.d_input_FC1 * out_mult
+        self.FC1 = nn.Sequential(
+                nn.Linear(self.d_input_FC1, self.d_hidden_FC1),
+                nn.ReLU(),
+                nn.Linear(self.d_hidden_FC1, self.d_output_FC1))
 
-        # ReLU (Rectified Linear Unit) Activation Function
-        self.SG_relu2 = torch.nn.ReLU()
+        # Fully connected 2
+        self.d_input_FC2 = self.d_hidden_Sigma + self.d_output_FC1
+        self.d_output_FC2 = self.d_hidden_Sigma
+        self.FC2 = nn.Sequential(
+                nn.Linear(self.d_input_FC2, self.d_output_FC2),
+                nn.ReLU())
+        
+        # Fully connected 3
+        self.d_input_FC3 = self.m
+        self.d_output_FC3 = self.m * in_mult
+        self.FC3 = nn.Sequential(
+                nn.Linear(self.d_input_FC3, self.d_output_FC3),
+                nn.ReLU())
 
-        ####################
-        ### Output Layer ###
-        ####################
-        self.SG_l3 = torch.nn.Linear(H2, D_out, bias=True)
+        # Fully connected 4
+        self.d_input_FC4 = 2 * self.m
+        self.d_output_FC4 = 2 * self.m * in_mult
+        self.FC4 = nn.Sequential(
+                nn.Linear(self.d_input_FC4, self.d_output_FC4),
+                nn.ReLU())
 
     ####################################
     ### Initialize Backward Sequence ###
@@ -120,33 +113,29 @@ class RTSNetNN(KalmanNetNN):
     ################################
     def step_RTSGain_est(self, filter_x_nexttime, smoother_x_tplus2):
 
-        # Reshape and Normalize Delta tilde x_t+1 = x_t+1|T-x_t+1|t+1
+        # Reshape and Normalize Delta tilde x_t+1 = x_t+1|T - x_t+1|t+1
         dm1x_tilde = self.s_m1x_nexttime - filter_x_nexttime
         dm1x_tilde_reshape = torch.squeeze(dm1x_tilde)
-        dm1x_tilde_norm = func.normalize(dm1x_tilde_reshape, p=2, dim=0, eps=1e-12, out=None)
+        bw_innov_diff = func.normalize(dm1x_tilde_reshape, p=2, dim=0, eps=1e-12, out=None)
         
         if smoother_x_tplus2 is None:
             # Reshape and Normalize Delta x_t+1 = x_t+1|t+1 - x_t+1|t (for t = T-1)
             dm1x_input2 = filter_x_nexttime - self.filter_x_prior
             dm1x_input2_reshape = torch.squeeze(dm1x_input2)
-            dm1x_input2_norm = func.normalize(dm1x_input2_reshape, p=2, dim=0, eps=1e-12, out=None)
+            bw_evol_diff = func.normalize(dm1x_input2_reshape, p=2, dim=0, eps=1e-12, out=None)
         else:
             # Reshape and Normalize Delta x_t+1|T = x_t+2|T - x_t+1|T (for t = 1:T-2)
             dm1x_input2 = smoother_x_tplus2 - self.s_m1x_nexttime
             dm1x_input2_reshape = torch.squeeze(dm1x_input2)
-            dm1x_input2_norm = func.normalize(dm1x_input2_reshape, p=2, dim=0, eps=1e-12, out=None)
+            bw_evol_diff = func.normalize(dm1x_input2_reshape, p=2, dim=0, eps=1e-12, out=None)
 
         # Feature 7:  x_t+1|T - x_t+1|t
         dm1x_f7 = self.s_m1x_nexttime - filter_x_nexttime
         dm1x_f7_reshape = torch.squeeze(dm1x_f7)
-        dm1x_f7_norm = func.normalize(dm1x_f7_reshape, p=2, dim=0, eps=1e-12, out=None)
-        
-
-        # RTSGain Net Input
-        SGainNet_in = torch.cat([dm1x_tilde_norm, dm1x_input2_norm,dm1x_f7_norm], dim=0)
+        bw_update_diff = func.normalize(dm1x_f7_reshape, p=2, dim=0, eps=1e-12, out=None)
 
         # Smoother Gain Network Step
-        SG = self.RTSGain_step(SGainNet_in)
+        SG = self.RTSGain_step(bw_innov_diff, bw_evol_diff, bw_update_diff)
 
         # Reshape Smoother Gain to a Matrix
         self.SGain = torch.reshape(SG, (self.m, self.m))
@@ -174,33 +163,53 @@ class RTSNetNN(KalmanNetNN):
     ##########################
     ### Smoother Gain Step ###
     ##########################
-    def RTSGain_step(self, SGainNet_in):
+    def RTSGain_step(self, bw_innov_diff, bw_evol_diff, bw_update_diff):
 
-        ###################
-        ### Input Layer ###
-        ###################
-        L1_out = self.SG_l1(SGainNet_in);
-        La1_out = self.SG_relu1(L1_out);
+        def expand_dim(x):
+            expanded = torch.empty(self.seq_len_input, self.batch_size, x.shape[-1])
+            expanded[0, 0, :] = x
+            return expanded
 
-        ###########
-        ### GRU ###
-        ###########
-        GRU_in = torch.empty(self.seq_len_input, self.batch_size, self.input_dim)
-        GRU_in[0, 0, :] = La1_out
-        GRU_out, self.hn = self.rnn_GRU(GRU_in, self.hn)
-        GRU_out_reshape = torch.reshape(GRU_out, (1, self.hidden_dim))
+        bw_innov_diff = expand_dim(bw_innov_diff)
+        bw_evol_diff = expand_dim(bw_evol_diff)
+        bw_update_diff = expand_dim(bw_update_diff)
+        
+        ####################
+        ### Forward Flow ###
+        ####################
+        
+        # FC 3
+        in_FC3 = bw_update_diff
+        out_FC3 = self.FC3(in_FC3)
 
-        ####################
-        ### Hidden Layer ###
-        ####################
-        L2_out = self.SG_l2(GRU_out_reshape)
-        La2_out = self.SG_relu2(L2_out)
+        # Q-GRU
+        in_Q = out_FC3
+        out_Q, self.h_Q = self.GRU_Q(in_Q, self.h_Q)
 
-        ####################
-        ### Output Layer ###
-        ####################
-        L3_out = self.SG_l3(La2_out)
-        return L3_out
+        # FC 4
+        in_FC4 = torch.cat((bw_innov_diff, bw_evol_diff), 2)
+        out_FC4 = self.FC6(in_FC4)
+
+        # Sigma_GRU
+        in_Sigma = torch.cat((out_Q, out_FC4), 2)
+        out_Sigma, self.h_Sigma = self.GRU_Sigma(in_Sigma, self.h_Sigma)
+
+        # FC 1
+        in_FC1 = out_Sigma
+        out_FC1 = self.FC1(in_FC1)
+
+        #####################
+        ### Backward Flow ###
+        #####################
+
+        # FC 2
+        in_FC2 = torch.cat((out_Sigma, out_FC1), 2)
+        out_FC2 = self.FC2(in_FC2)
+
+        # updating hidden state of the Sigma-GRU
+        self.h_Sigma = out_FC2
+
+        return out_FC1
 
     ###############
     ### Forward ###
