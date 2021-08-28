@@ -132,51 +132,51 @@ class Pipeline_ERTS:
 
             # Training Mode
             self.model.train()
+            with torch.autograd.set_detect_anomaly(True):
+                # Init Hidden State
+                self.model.init_hidden()
 
-            # Init Hidden State
-            self.model.init_hidden()
+                Batch_Optimizing_LOSS_sum = 0
 
-            Batch_Optimizing_LOSS_sum = 0
-
-            for j in range(0, self.N_B):
-                self.model.i = 0
-                n_e = random.randint(0, self.N_E - 1)
-                if(sequential_training):
-                    if(nclt):
-                        init_conditions = torch.reshape(cv_input[j,:,0], SysModel.m1x_0.shape)
-                    elif CV_IC is None:
-                        init_conditions = torch.reshape(cv_target[j,:,0], SysModel.m1x_0.shape)
+                for j in range(0, self.N_B):
+                    self.model.i = 0
+                    n_e = random.randint(0, self.N_E - 1)
+                    if(sequential_training):
+                        if(nclt):
+                            init_conditions = torch.reshape(cv_input[j,:,0], SysModel.m1x_0.shape)
+                        elif CV_IC is None:
+                            init_conditions = torch.reshape(cv_target[j,:,0], SysModel.m1x_0.shape)
+                        else:
+                            init_conditions = SysModel.m1x_0
                     else:
                         init_conditions = SysModel.m1x_0
-                else:
-                    init_conditions = SysModel.m1x_0
 
-                y_training = train_input[n_e, :, :]
-                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
+                    y_training = train_input[n_e, :, :]
+                    self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
 
-                x_out_training_forward = torch.empty(SysModel.m, SysModel.T)
-                x_out_training = torch.empty(SysModel.m, SysModel.T)
-                for t in range(0, SysModel.T):
-                    x_out_training_forward[:, t] = self.model(y_training[:, t], None, None, None)
-                x_out_training[:, SysModel.T-1] = x_out_training_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T 
-                self.model.InitBackward(x_out_training[:, SysModel.T-1]) 
-                x_out_training[:, SysModel.T-2] = self.model(None, x_out_training_forward[:, SysModel.T-2], x_out_training_forward[:, SysModel.T-1],None)
-                for t in range(SysModel.T-3, -1, -1):
-                    x_out_training[:, t] = self.model(None, x_out_training_forward[:, t], x_out_training_forward[:, t+1],x_out_training[:, t+2])
+                    x_out_training_forward = torch.empty(SysModel.m, SysModel.T)
+                    x_out_training = torch.empty(SysModel.m, SysModel.T)
+                    for t in range(0, SysModel.T):
+                        x_out_training_forward[:, t] = self.model(y_training[:, t], None, None, None)
+                    x_out_training[:, SysModel.T-1] = x_out_training_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T 
+                    self.model.InitBackward(x_out_training[:, SysModel.T-1]) 
+                    x_out_training[:, SysModel.T-2] = self.model(None, x_out_training_forward[:, SysModel.T-2], x_out_training_forward[:, SysModel.T-1],None)
+                    for t in range(SysModel.T-3, -1, -1):
+                        x_out_training[:, t] = self.model(None, x_out_training_forward[:, t], x_out_training_forward[:, t+1],x_out_training[:, t+2])
 
-                # Compute Training Loss
-                if(nclt):
-                    if x_out_training.size()[0]==6:
-                        mask = torch.tensor([True,False,False,True,False,False])
+                    # Compute Training Loss
+                    if(nclt):
+                        if x_out_training.size()[0]==6:
+                            mask = torch.tensor([True,False,False,True,False,False])
+                        else:
+                            mask = torch.tensor([True,False,True,False])
+                        LOSS = self.loss_fn(x_out_training[mask], train_target[n_e, :, :])
                     else:
-                        mask = torch.tensor([True,False,True,False])
-                    LOSS = self.loss_fn(x_out_training[mask], train_target[n_e, :, :])
-                else:
-                    LOSS = self.loss_fn(x_out_training, train_target[n_e, :, :])
+                        LOSS = self.loss_fn(x_out_training, train_target[n_e, :, :])
 
-                MSE_train_linear_batch[j] = LOSS.item()
+                    MSE_train_linear_batch[j] = LOSS.item()
 
-                Batch_Optimizing_LOSS_sum = Batch_Optimizing_LOSS_sum + LOSS
+                    Batch_Optimizing_LOSS_sum = Batch_Optimizing_LOSS_sum + LOSS
 
             # Average
             self.MSE_train_linear_epoch[ti] = torch.mean(MSE_train_linear_batch)

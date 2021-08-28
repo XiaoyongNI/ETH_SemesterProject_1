@@ -32,7 +32,7 @@ class RTSNetNN(KalmanNetNN):
         self.InitSystemDynamics(ssModel.f, ssModel.h, ssModel.m, ssModel.n, infoString = 'fullInfo')
         self.InitSequence(ssModel.m1x_0, ssModel.m2x_0, ssModel.T)
 
-        self.InitKGainNet(ssModel.prior_Q, ssModel.prior_Sigma, ssModel.prior_S)
+        self.InitKGainNet(ssModel.Q, ssModel.prior_Sigma, ssModel.prior_S)
 
         # # Number of neurons in the 1st hidden layer
         # H1_RTSNet = (ssModel.m + ssModel.m) * (10) * 8
@@ -60,7 +60,7 @@ class RTSNetNN(KalmanNetNN):
         self.h_Q_bw = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Q_bw).to(dev, non_blocking=True)
 
         # BW GRU to track Sigma
-        self.d_input_Sigma_bw = self.d_hidden_Q_bw + self.m * in_mult
+        self.d_input_Sigma_bw = self.d_hidden_Q_bw + 2 * self.m * in_mult
         self.d_hidden_Sigma_bw = self.m ** 2
         self.GRU_Sigma_bw = nn.GRU(self.d_input_Sigma_bw, self.d_hidden_Sigma_bw)
         self.h_Sigma_bw = torch.randn(self.seq_len_input, self.batch_size, self.d_hidden_Sigma_bw).to(dev, non_blocking=True)
