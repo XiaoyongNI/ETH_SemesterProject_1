@@ -53,7 +53,7 @@ class Pipeline_ERTS:
         self.N_E = train_input.size()[0]
         self.N_CV = cv_input.size()[0]
 
-        MSE_cv_linear_batch = torch.empty([N_CV]).to(dev, non_blocking=True)
+        MSE_cv_linear_batch = torch.empty([self.N_CV]).to(dev, non_blocking=True)
         self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
         self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
@@ -74,57 +74,6 @@ class Pipeline_ERTS:
             N = epochs
 
         for ti in range(0, N):
-
-            #################################
-            ### Validation Sequence Batch ###
-            #################################
-
-            # Cross Validation Mode
-            self.model.eval()
-
-            for j in range(0, self.N_CV):
-                # Initialize next sequence
-                if(sequential_training):
-                    if(nclt):
-                        init_conditions = torch.reshape(cv_input[j,:,0], SysModel.m1x_0.shape)
-                    elif CV_IC is None:
-                        init_conditions = torch.reshape(cv_target[j,:,0], SysModel.m1x_0.shape)
-                    else:
-                        init_conditions = SysModel.m1x_0
-                else:
-                    init_conditions = SysModel.m1x_0
-
-                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)   
-                y_cv = cv_input[j, :, :]
-
-                x_out_cv_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
-                x_out_cv = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
-                for t in range(0, SysModel.T):
-                    x_out_cv_forward[:, t] = self.model(y_cv[:, t], None, None, None)
-                x_out_cv[:, SysModel.T-1] = x_out_cv_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T
-                self.model.InitBackward(x_out_cv[:, SysModel.T-1]) 
-                x_out_cv[:, SysModel.T-2] = self.model(None, x_out_cv_forward[:, SysModel.T-2], x_out_cv_forward[:, SysModel.T-1],None)
-                for t in range(SysModel.T-3, -1, -1):
-                    x_out_cv[:, t] = self.model(None, x_out_cv_forward[:, t], x_out_cv_forward[:, t+1],x_out_cv[:, t+2])
-
-                # Compute Training Loss
-                if(nclt):
-                    if x_out_cv.size()[0]==6:
-                        mask = torch.tensor([True,False,False,True,False,False])
-                    else:
-                        mask = torch.tensor([True,False,True,False])
-                    MSE_cv_linear_batch[j] = self.loss_fn(x_out_cv[mask], cv_target[j, :, :]).item()
-                else:
-                    MSE_cv_linear_batch[j] = self.loss_fn(x_out_cv, cv_target[j, :, :]).item()
-
-            # Average
-            self.MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
-            self.MSE_cv_dB_epoch[ti] = 10 * torch.log10(self.MSE_cv_linear_epoch[ti])
-
-            if (self.MSE_cv_dB_epoch[ti] < self.MSE_cv_dB_opt):
-                self.MSE_cv_dB_opt = self.MSE_cv_dB_epoch[ti]
-                self.MSE_cv_idx_opt = ti
-                torch.save(self.model, path_results + 'best-model.pt')
 
             ###############################
             ### Training Sequence Batch ###
@@ -205,12 +154,64 @@ class Pipeline_ERTS:
             self.optimizer.step()
             # self.scheduler.step(self.MSE_cv_dB_epoch[ti])
 
+            #################################
+            ### Validation Sequence Batch ###
+            #################################
+
+            # Cross Validation Mode
+            self.model.eval()
+
+            for j in range(0, self.N_CV):
+                # Initialize next sequence
+                if(sequential_training):
+                    if(nclt):
+                        init_conditions = torch.reshape(cv_input[j,:,0], SysModel.m1x_0.shape)
+                    elif CV_IC is None:
+                        init_conditions = torch.reshape(cv_target[j,:,0], SysModel.m1x_0.shape)
+                    else:
+                        init_conditions = SysModel.m1x_0
+                else:
+                    init_conditions = SysModel.m1x_0
+
+                self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)   
+                y_cv = cv_input[j, :, :]
+
+                x_out_cv_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
+                x_out_cv = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
+                for t in range(0, SysModel.T):
+                    x_out_cv_forward[:, t] = self.model(y_cv[:, t], None, None, None)
+                x_out_cv[:, SysModel.T-1] = x_out_cv_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T
+                self.model.InitBackward(x_out_cv[:, SysModel.T-1]) 
+                x_out_cv[:, SysModel.T-2] = self.model(None, x_out_cv_forward[:, SysModel.T-2], x_out_cv_forward[:, SysModel.T-1],None)
+                for t in range(SysModel.T-3, -1, -1):
+                    x_out_cv[:, t] = self.model(None, x_out_cv_forward[:, t], x_out_cv_forward[:, t+1],x_out_cv[:, t+2])
+
+                # Compute Training Loss
+                if(nclt):
+                    if x_out_cv.size()[0]==6:
+                        mask = torch.tensor([True,False,False,True,False,False])
+                    else:
+                        mask = torch.tensor([True,False,True,False])
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_out_cv[mask], cv_target[j, :, :]).item()
+                else:
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_out_cv, cv_target[j, :, :]).item()
+
+            # Average
+            self.MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
+            self.MSE_cv_dB_epoch[ti] = 10 * torch.log10(self.MSE_cv_linear_epoch[ti])
+
+            if (self.MSE_cv_dB_epoch[ti] < self.MSE_cv_dB_opt):
+                self.MSE_cv_dB_opt = self.MSE_cv_dB_epoch[ti]
+                self.MSE_cv_idx_opt = ti
+                torch.save(self.model, path_results + 'best-model.pt')
+
             ########################
             ### Training Summary ###
             ########################
             print(ti, "MSE Training :", self.MSE_train_dB_epoch[ti], "[dB]", "MSE Validation :", self.MSE_cv_dB_epoch[ti],
                   "[dB]")
-
+            
+            
             if (ti > 1):
                 d_train = self.MSE_train_dB_epoch[ti] - self.MSE_train_dB_epoch[ti - 1]
                 d_cv = self.MSE_cv_dB_epoch[ti] - self.MSE_cv_dB_epoch[ti - 1]
