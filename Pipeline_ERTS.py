@@ -279,7 +279,7 @@ class Pipeline_ERTS:
         str = self.modelName + "-" + "MSE Test:"
         print(str, self.MSE_test_dB_avg, "[dB]")
 
-        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_array]
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_array, t]
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 

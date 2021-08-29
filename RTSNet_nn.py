@@ -32,7 +32,7 @@ class RTSNetNN(KalmanNetNN):
         self.InitSystemDynamics(ssModel.f, ssModel.h, ssModel.m, ssModel.n, infoString = 'fullInfo')
         self.InitSequence(ssModel.m1x_0, ssModel.m2x_0, ssModel.T)
 
-        self.InitKGainNet(ssModel.Q, ssModel.prior_Sigma, ssModel.prior_S)
+        self.InitKGainNet(ssModel.Q, ssModel.prior_Sigma, ssModel.R)
 
         # # Number of neurons in the 1st hidden layer
         # H1_RTSNet = (ssModel.m + ssModel.m) * (10) * 8
