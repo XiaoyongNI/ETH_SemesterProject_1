@@ -63,6 +63,8 @@ q = torch.sqrt(q2)
 
 r2optdB = torch.tensor([32])
 ropt = torch.sqrt(10**(-r2optdB/10))
+q2optdB = torch.tensor([48])
+qopt = torch.sqrt(10**(-q2optdB/10))
 print("1/r2 [dB]: ", 10 * torch.log10(1/r[0]**2))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q[0]**2))
 
@@ -96,38 +98,38 @@ for rindex in range(0, len(ropt)):
    sys_model_partialh.InitSequence(m1x_0, m2x_0)
    
    #Evaluate EKF true
-   print("Evaluate EKF true")
-   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
+   # print("Evaluate EKF true")
+   # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
    # #Evaluate EKF partial (h or r)
    # [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model_partialh, test_input, test_target)
    #Evaluate EKF partial optq
   #  [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
   #  #Evaluate EKF partialh optr
-   print("Evaluate EKF partial")
-   [MSE_EKF_linear_arr_partialoptr, MSE_EKF_linear_avg_partialoptr, MSE_EKF_dB_avg_partialoptr, EKF_KG_array_partialoptr, EKF_out_partialoptr] = EKFTest(sys_model_partialh, test_input, test_target)
+   # print("Evaluate EKF partial")
+   # [MSE_EKF_linear_arr_partialoptr, MSE_EKF_linear_avg_partialoptr, MSE_EKF_dB_avg_partialoptr, EKF_KG_array_partialoptr, EKF_out_partialoptr] = EKFTest(sys_model_partialh, test_input, test_target)
    #Eval PF partial
    # [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial, t_PF] = PFTest(sys_model_partialh, test_input, test_target, init_cond=None)
    # print(f"MSE PF H NL: {MSE_PF_dB_avg_partial} [dB] (T = {T_test})")
    #Evaluate RTS true
-   print("Evaluate RTS true")
-   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
-   #Evaluate RTS partialh optr
-   print("Evaluate RTS partial")
-   [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
+   # print("Evaluate RTS true")
+   # [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
+   # #Evaluate RTS partialh optr
+   # print("Evaluate RTS partial")
+   # [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
    
    
    # Save results
 
-   KFRTSfolderName = 'ERTSNet' + '/'
-   torch.save({'MSE_EKF_linear_arr': MSE_EKF_linear_arr,
-               'MSE_EKF_dB_avg': MSE_EKF_dB_avg,
-               'MSE_EKF_linear_arr_partialoptr': MSE_EKF_linear_arr_partialoptr,
-               'MSE_EKF_dB_avg_partialoptr': MSE_EKF_dB_avg_partialoptr,
-               'MSE_ERTS_linear_arr': MSE_ERTS_linear_arr,
-               'MSE_ERTS_dB_avg': MSE_ERTS_dB_avg,
-               'MSE_ERTS_linear_arr_partialoptr': MSE_ERTS_linear_arr_partialoptr,
-               'MSE_ERTS_dB_avg_partialoptr': MSE_ERTS_dB_avg_partialoptr,
-               }, KFRTSfolderName+KFRTSResultName)
+   # KFRTSfolderName = 'ERTSNet' + '/'
+   # torch.save({'MSE_EKF_linear_arr': MSE_EKF_linear_arr,
+   #             'MSE_EKF_dB_avg': MSE_EKF_dB_avg,
+   #             'MSE_EKF_linear_arr_partialoptr': MSE_EKF_linear_arr_partialoptr,
+   #             'MSE_EKF_dB_avg_partialoptr': MSE_EKF_dB_avg_partialoptr,
+   #             'MSE_ERTS_linear_arr': MSE_ERTS_linear_arr,
+   #             'MSE_ERTS_dB_avg': MSE_ERTS_dB_avg,
+   #             'MSE_ERTS_linear_arr_partialoptr': MSE_ERTS_linear_arr_partialoptr,
+   #             'MSE_ERTS_dB_avg_partialoptr': MSE_ERTS_dB_avg_partialoptr,
+   #             }, KFRTSfolderName+KFRTSResultName)
 
    # # Save trajectories
    # trajfolderName = 'KNet' + '/'
@@ -157,7 +159,7 @@ for rindex in range(0, len(ropt)):
    RTSNet_Pipeline.setssModel(sys_model)
    RTSNet_Pipeline.setModel(RTSNet_model)
    RTSNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=20, learningRate=1e-4, weightDecay=1e-6)
-   # RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=cuda0)
+   RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=cuda0)
    [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
    ## Test Neural Network
    [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
