@@ -141,7 +141,7 @@ class SystemModel:
     ######################
     ### Generate Batch ###
     ######################
-    def GenerateBatch(self, size, gain, T, randomInit=False, seqInit=False, T_test=0):
+    def GenerateBatch(self, size, T, randomInit=False, seqInit=False, T_test=0):
 
         # Allocate Empty Array for Input
         self.Input = torch.empty(size, self.n, T)
