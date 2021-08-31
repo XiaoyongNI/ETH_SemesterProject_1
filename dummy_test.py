@@ -6,11 +6,12 @@ import os
 from scipy.signal import find_peaks
 os.environ["KMP_DUPLICATE_LIB_OK"]  =  "TRUE"
 device = torch.device('cpu')
-q = 1
+q = 0
 delta_t = 0.02
 m = 2
-Q = q * q * torch.tensor([[(delta_t**3)/3, (delta_t**2)/2],
-                          [(delta_t**2)/2, delta_t]])
+# Q = q * q * torch.tensor([[(delta_t**3)/3, (delta_t**2)/2],
+#                           [(delta_t**2)/2, delta_t]])
+Q = q * q * torch.eye(m)
 print(Q)
 if torch.all(Q.bool())==0:
     print(torch.all(Q.bool()))

@@ -10,23 +10,23 @@ else:
 
 class SystemModel:
 
-    def __init__(self, F, Q, H, R, T, T_test, prior_Q=None, prior_Sigma=None, prior_S=None):
+    def __init__(self, F, q, H, r, T, T_test, prior_Q=None, prior_Sigma=None, prior_S=None):
 
         ####################
         ### Motion Model ###
         ####################
         self.F = F
-
-        self.Q = Q
-        self.m = self.Q.size()[0]
+        self.m = self.F.size()[0]
+        self.q = q
+        self.Q = q * q * torch.eye(self.m)
 
         #########################
         ### Observation Model ###
         #########################
         self.H = H
-
-        self.R = R
-        self.n = self.R.size()[0]
+        self.n = self.H.size()[0]
+        self.r = r
+        self.R = r * r * torch.eye(self.n)
 
         ################
         ### Sequence ###
@@ -101,7 +101,7 @@ class SystemModel:
             ########################
             #### State Evolution ###
             ########################
-            if torch.all(self.Q.bool())==0:
+            if self.q==0:
                 xt = self.F.matmul(self.x_prev)            
             else:
                 xt = self.F.matmul(self.x_prev)
@@ -117,7 +117,7 @@ class SystemModel:
             ### Emission ###
             ################
             # Observation Noise
-            if torch.all(self.R.bool())==0:
+            if self.r==0:
                 yt = self.H.matmul(xt)           
             else:
                 yt = self.H.matmul(xt)

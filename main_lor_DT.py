@@ -86,15 +86,11 @@ print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
 for rindex in range(0, len(ropt)):
    # Model with full info
-   Q_true = (q[0]**2) * torch.eye(m)
-   R_true = (r[0]**2) * torch.eye(n)
-   sys_model = SystemModel(f, Q_true, h, R_true, T, T_test)
+   sys_model = SystemModel(f, q[0], h, r[0], T, T_test,m,n)
    sys_model.InitSequence(m1x_0, m2x_0)
 
    # Model with partial Info
-   Q_mod = (q[0]**2) * torch.eye(m)
-   R_mod = (ropt**2) * torch.eye(n)
-   sys_model_partialh = SystemModel(f, Q_mod, hInacc, R_mod, T, T_test)
+   sys_model_partialh = SystemModel(f, q[0], hInacc, ropt, T, T_test,m,n)
    sys_model_partialh.InitSequence(m1x_0, m2x_0)
    
    #Evaluate EKF true

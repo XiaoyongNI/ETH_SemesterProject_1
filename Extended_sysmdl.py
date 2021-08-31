@@ -11,23 +11,23 @@ else:
 
 class SystemModel:
 
-    def __init__(self, f, Q, h, R, T, T_test, prior_Q=None, prior_Sigma=None, prior_S=None):
+    def __init__(self, f, q, h, r, T, T_test, m, n, prior_Q=None, prior_Sigma=None, prior_S=None):
 
         ####################
         ### Motion Model ###
         ####################
         self.f = f
 
-        self.Q = Q
-        self.m = self.Q.size()[0]
+        self.q = q
+        self.m = m
 
         #########################
         ### Observation Model ###
         #########################
         self.h = h
 
-        self.R = R
-        self.n = self.R.size()[0]
+        self.r = r
+        self.n = n
 
         ################
         ### Sequence ###

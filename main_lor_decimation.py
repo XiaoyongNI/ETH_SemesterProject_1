@@ -60,14 +60,14 @@ traj_resultName = ['traj_lor_dec_PF_r0.pt']#,'partial_lor_r4.pt','partial_lor_r5
 for rindex in range(0, len(r)):
    print("1/r2 [dB]: ", 10 * torch.log10(1/r[rindex]**2))
    print("Search 1/q2 [dB]: ", 10 * torch.log10(1/lambda_q[rindex]**2))
-   Q_mod = (lambda_q[rindex]**2) * torch.eye(m)
-   R_mod = (r[rindex]**2) * torch.eye(n)
+   # Q_mod = (lambda_q[rindex]**2) * torch.eye(m)
+   # R_mod = (r[rindex]**2) * torch.eye(n)
    # True Model
-   sys_model_true = SystemModel(f, Q_mod, h, R_mod, T, T_test)
+   sys_model_true = SystemModel(f, lambda_q[rindex], h, r[rindex], T, T_test,m,n)
    sys_model_true.InitSequence(m1x_0, m2x_0)
 
    # Model with partial Info
-   sys_model = SystemModel(fInacc, Q_mod, h, R_mod, T, T_test)
+   sys_model = SystemModel(fInacc, lambda_q[rindex], h, r[rindex], T, T_test,m,n)
    sys_model.InitSequence(m1x_0, m2x_0)
 
    #Generate and load data Decimation case (chopped)

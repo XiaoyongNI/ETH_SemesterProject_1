@@ -50,13 +50,13 @@ print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
 
 # True model
-Q_true = (q2[0]) * torch.eye(m)
-R_true = (r2[0]) * torch.eye(n)
-sys_model = SystemModel(F, Q_true, H, R_true, T, T_test)
+r = torch.sqrt(r2)
+q = torch.sqrt(q2)
+sys_model = SystemModel(F, q, H, r, T, T_test)
 sys_model.InitSequence(m1_0, m2_0)
 
 # Mismatched model
-sys_model_partialh = SystemModel(F, Q_true, H_rotated, R_true, T, T_test)
+sys_model_partialh = SystemModel(F, q, H_rotated, r, T, T_test)
 sys_model_partialh.InitSequence(m1_0, m2_0)
 
 ###################################
