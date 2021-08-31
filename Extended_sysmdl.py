@@ -88,7 +88,10 @@ class SystemModel:
     ### Generate Sequence ###
     #########################
     def GenerateSequence(self, Q_gen, R_gen, T):
-
+        # Pre allocate an array for current state
+        self.x = torch.empty(size=[self.m, T])
+        # Pre allocate an array for current observation
+        self.y = torch.empty(size=[self.n, T])
         # Set x0 to be x previous
         self.x_prev = self.m1x_0
         xt = self.x_prev
