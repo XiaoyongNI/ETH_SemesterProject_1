@@ -32,7 +32,7 @@ class RTSNetNN(KalmanNetNN):
         self.InitSystemDynamics(ssModel.f, ssModel.h, ssModel.m, ssModel.n, infoString = 'fullInfo')
         self.InitSequence(ssModel.m1x_0, ssModel.m2x_0, ssModel.T)
 
-        self.InitKGainNet(ssModel.Q, ssModel.prior_Sigma, ssModel.R)
+        self.InitKGainNet(ssModel.prior_Q, ssModel.prior_Sigma, ssModel.prior_S)
 
         # # Number of neurons in the 1st hidden layer
         # H1_RTSNet = (ssModel.m + ssModel.m) * (10) * 8
@@ -40,7 +40,7 @@ class RTSNetNN(KalmanNetNN):
         # # Number of neurons in the 2nd hidden layer
         # H2_RTSNet = (ssModel.m * ssModel.m) * 1 * (4)
 
-        self.InitRTSGainNet(ssModel.Q, ssModel.prior_Sigma)
+        self.InitRTSGainNet(ssModel.prior_Q, ssModel.prior_Sigma)
 
     #################################################
     ### Initialize Backward Smoother Gain Network ###
