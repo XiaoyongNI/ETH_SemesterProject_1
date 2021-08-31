@@ -42,7 +42,7 @@ path_results = 'RTSNet/'
 ####################
 ### Design Model ###
 ####################
-r2 = torch.tensor([1])
+r2 = torch.tensor([1e-1])
 vdB = -20 # ratio v=q2/r2
 v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
@@ -63,7 +63,7 @@ sys_model_partialh.InitSequence(m1_0, m2_0)
 ### Data Loader (Generate Data) ###
 ###################################
 dataFolderName = 'Simulations/Linear_canonical' + '/'
-dataFileName = '2x2_rq020_T100.pt'
+dataFileName = '2x2_rq1030_T100.pt'
 print("Start Gen Data")
 DataGen(sys_model, dataFolderName + dataFileName, T, T_test)
 print("Data Load")
@@ -129,7 +129,7 @@ RTSNet_model.NNBuild(sys_model)
 RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
 RTSNet_Pipeline.setssModel(sys_model)
 RTSNet_Pipeline.setModel(RTSNet_model)
-RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=30, learningRate=1E-3, weightDecay=1E-6)
+RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=100, learningRate=1E-4, weightDecay=1E-6)
 # RTSNet_Pipeline.model = torch.load('RTSNet/best-model.pt',map_location=dev)
 [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
 ## Test Neural Network
@@ -145,7 +145,7 @@ RTSNet_model.NNBuild(sys_model_partialh)
 RTSNet_Pipeline = Pipeline(strTime, "RTSNetPartialH", "RTSNetPartialH")
 RTSNet_Pipeline.setssModel(sys_model_partialh)
 RTSNet_Pipeline.setModel(RTSNet_model)
-RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=30, learningRate=1E-3, weightDecay=1E-6)
+RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=100, learningRate=1E-4, weightDecay=1E-6)
 # RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
 [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model_partialh, cv_input, cv_target, train_input, train_target, path_results)
 ## Test Neural Network
