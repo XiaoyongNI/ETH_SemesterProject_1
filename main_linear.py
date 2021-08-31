@@ -1,27 +1,27 @@
 import torch
 torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
+import torch.nn as nn
+from EKF_test import EKFTest
+from Extended_RTS_Smoother_test import S_Test
+from Linear_sysmdl import SystemModel
+from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_perturbate_Data,Short_Traj_Split
+from Extended_data import N_E, N_CV, N_T, F, H, F_rotated, H_rotated, T, T_test, m1_0, m2_0, m, n
+from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 
-from sysmdl import SystemModel
-from KalmanNet_data import DataGen, DataLoader_GPU
-from KalmanNet_data import F, H, T, T_test, m1_0, m2_0
+from datetime import datetime
+from RTSNet_nn import RTSNetNN
 
 from KalmanFilter_test import KFTest
 from RTS_Smoother_test import S_Test
-from KalmanNet_data import N_E, N_CV, N_T
 
-from Pipeline_RTS import Pipeline_RTS as Pipeline
-from RTSNet_nn import RTSNetNN
-from datetime import datetime
-
-from DataAnalysis import DataAnalysis
 from Plot import Plot_RTS as Plot
 
 if torch.cuda.is_available():
-   cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+   dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
    torch.set_default_tensor_type('torch.cuda.FloatTensor')
    print("Running on the GPU")
 else:
-   cpu0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
    
@@ -37,51 +37,52 @@ strToday = today.strftime("%m.%d.%y")
 strNow = now.strftime("%H:%M:%S")
 strTime = strToday + "_" + strNow
 print("Current Time =", strTime)
-
+path_results = 'RTSNet/'
 
 ####################
 ### Design Model ###
 ####################
-r = 1
-q = 1
+r2 = torch.tensor([10])
+vdB = -20 # ratio v=q2/r2
+v = 10**(vdB/10)
+q2 = torch.mul(v,r2)
+print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
+print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
 
-SysModel_design = SystemModel(F, q, H, r, T, T_test,'linear', outlier_p=0)
-SysModel_design.InitSequence(m1_0, m2_0)
+# True model
+Q_true = (q2[0]) * torch.eye(m)
+R_true = (r2[0]) * torch.eye(n)
+sys_model = SystemModel(F, Q_true, H, R_true, T, T_test)
+sys_model.InitSequence(m1_0, m2_0)
 
-# Inaccurate model knowledge based on matrix rotation
-# alpha_degree = 10
-# rotate_alpha = torch.tensor([alpha_degree/180*torch.pi]).to(cuda0)
-# cos_alpha = torch.cos(rotate_alpha)
-# sin_alpha = torch.sin(rotate_alpha)
-# rotate_matrix = torch.tensor([[cos_alpha, -sin_alpha],
-#                               [sin_alpha, cos_alpha]]).to(cuda0)
-# # print(rotate_matrix)
-# F_rotated = torch.mm(F,rotate_matrix) #inaccurate process model
-# # H_rotated = torch.mm(H,rotate_matrix) #inaccurate observation model
-
+# Mismatched model
+sys_model_partialh = SystemModel(F, Q_true, H_rotated, R_true, T, T_test)
+sys_model_partialh.InitSequence(m1_0, m2_0)
 
 ###################################
 ### Data Loader (Generate Data) ###
 ###################################
 dataFolderName = 'Data' + '/'
-dataFileName = 'data_10x10_Ttest1000.pt'
+dataFileName = 'data_2x2_Ttest100.pt'
 print("Start Gen Data")
-DataGen(SysModel_design, dataFolderName + dataFileName, T, T_test)
+DataGen(sys_model, dataFolderName + dataFileName, T, T_test)
 print("Data Load")
 [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName)
-
+print("trainset size:",train_target.size())
+print("cvset size:",cv_target.size())
+print("testset size:",test_target.size())
 
 ##############################
 ### Evaluate Kalman Filter ###
 ##############################
 print("Evaluate Kalman Filter")
-[MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(SysModel_design, test_input, test_target)
+[MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
 
 ##############################
 ### Evaluate RTS Smoother ###
 ##############################
 print("Evaluate RTS Smoother")
-[MSE_RTS_linear_arr, MSE_RTS_linear_avg, MSE_RTS_dB_avg] = S_Test(SysModel_design, test_input, test_target)
+[MSE_RTS_linear_arr, MSE_RTS_linear_avg, MSE_RTS_dB_avg] = S_Test(sys_model, test_input, test_target)
 
 ##############################
 ###  Compare KF and RTS    ###
@@ -115,23 +116,29 @@ print("Evaluate RTS Smoother")
 ### RTSNet Pipeline ###
 #######################
 
-RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
-RTSNet_Pipeline.setssModel(SysModel_design)
+# RTSNet with full info
+## Build Neural Network
+print("RTSNet with full model info")
 RTSNet_model = RTSNetNN()
-RTSNet_model.Build(SysModel_design)
+RTSNet_model.NNBuild(sys_model)
+## Train Neural Network
+RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
+RTSNet_Pipeline.setssModel(sys_model)
 RTSNet_Pipeline.setModel(RTSNet_model)
-RTSNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=5E-3, weightDecay=5E-6)
-RTSNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-RTSNet_Pipeline.NNTest(N_T, test_input, test_target)
+RTSNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-6)
+# RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
+[MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
+## Test Neural Network
+[MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 RTSNet_Pipeline.save()
-DatafolderName = 'Data' + '/'
-DataResultName = '10x10_Ttest1000' 
-torch.save({
-            'MSE_KF_linear_arr': MSE_KF_linear_arr,
-            'MSE_KF_dB_avg': MSE_KF_dB_avg,
-            'MSE_RTS_linear_arr': MSE_RTS_linear_arr,
-            'MSE_RTS_dB_avg': MSE_RTS_dB_avg,
-            }, DatafolderName+DataResultName)
+# DatafolderName = 'Data' + '/'
+# DataResultName = '10x10_Ttest1000' 
+# torch.save({
+#             'MSE_KF_linear_arr': MSE_KF_linear_arr,
+#             'MSE_KF_dB_avg': MSE_KF_dB_avg,
+#             'MSE_RTS_linear_arr': MSE_RTS_linear_arr,
+#             'MSE_RTS_dB_avg': MSE_RTS_dB_avg,
+#             }, DatafolderName+DataResultName)
 
 # print("Plot")
 # RTSNet_Pipeline.PlotTrain_RTS(MSE_KF_linear_arr, MSE_KF_dB_avg, MSE_RTS_linear_arr, MSE_RTS_dB_avg)

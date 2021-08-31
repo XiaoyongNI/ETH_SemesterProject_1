@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from KalmanNet_KF import KalmanFilter
+from Linear_KF import KalmanFilter
 from RTS_Smoother import rts_smoother
-from KalmanNet_data import N_T
+from Extended_data import N_T
 
 def S_Test(SysModel, test_input, test_target):
 

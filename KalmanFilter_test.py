@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from KalmanNet_KF import KalmanFilter
-from KalmanNet_data import N_T
+from Linear_KF import KalmanFilter
+from Extended_data import N_T
 
 def KFTest(SysModel, test_input, test_target):
 
