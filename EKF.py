@@ -10,10 +10,10 @@ sys.path.insert(1, path_model)
 from model import getJacobian
 
 if torch.cuda.is_available():
-    cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+    dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
-   cuda0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
 class ExtendedKalmanFilter:
