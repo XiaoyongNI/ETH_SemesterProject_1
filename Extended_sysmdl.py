@@ -1,5 +1,6 @@
 
 import torch
+from torch.distributions.multivariate_normal import MultivariateNormal
 import numpy as np
 
 if torch.cuda.is_available():
@@ -98,16 +99,20 @@ class SystemModel:
             ########################
             #### State Evolution ###
             ########################
-            xt = self.f(self.x_prev)
-
             # Process Noise
-            mean = torch.zeros(self.m)
-            eq = np.random.multivariate_normal(mean, Q_gen, 1)
-            eq = torch.transpose(torch.tensor(eq), 0, 1)
-            eq = eq.type(torch.float)
-
-            # Additive Process Noise
-            xt = xt.add(eq)
+            if self.q == 0:
+                xt = self.f(self.x_prev)              
+            else:
+                xt = self.f(self.x_prev)
+                mean = torch.zeros([self.m])
+                if self.modelname == "pendulum":
+                    distrib = MultivariateNormal(loc=mean, covariance_matrix=Q_gen)
+                    eq = distrib.rsample()
+                else:
+                    eq = torch.normal(mean, self.q)
+                         
+                # Additive Process Noise
+                xt = torch.add(xt,eq)
 
             ################
             ### Emission ###
@@ -115,13 +120,14 @@ class SystemModel:
             yt = self.h(xt)
 
             # Observation Noise
-            mean = torch.zeros(self.n)
-            er = np.random.multivariate_normal(mean, R_gen, 1)
-            er = torch.transpose(torch.tensor(er), 0, 1)
+            mean = torch.zeros([self.n])
+            er = torch.normal(mean, self.r)
+            # er = np.random.multivariate_normal(mean, R_gen, 1)
+            # er = torch.transpose(torch.tensor(er), 0, 1)
 
             # Additive Observation Noise
-            yt = yt.add(er)
-
+            yt = torch.add(yt,er)
+            
             ########################
             ### Squeeze to Array ###
             ########################
