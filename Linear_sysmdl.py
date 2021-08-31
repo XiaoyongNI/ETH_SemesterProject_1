@@ -165,7 +165,7 @@ class SystemModel:
                     initConditions = torch.zeros_like(self.m1x_0)
 
             self.InitSequence(initConditions, self.m2x_0)
-            self.GenerateSequence(self.Q, self.R)
+            self.GenerateSequence(self.Q, self.R, T)
 
             # Training sequence input
             self.Input[i, :, :] = self.y
