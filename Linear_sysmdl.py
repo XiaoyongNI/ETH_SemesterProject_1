@@ -98,7 +98,7 @@ class SystemModel:
             ########################
             #### State Evolution ###
             ########################
-            if self.q == 0:
+            if torch.all(self.Q.bool())==0:
                 xt = self.F.matmul(self.x_prev)            
             else:
                 xt = self.F.matmul(self.x_prev)
@@ -114,7 +114,7 @@ class SystemModel:
             ### Emission ###
             ################
             # Observation Noise
-            if self.r == 0:
+            if torch.all(self.R.bool())==0:
                 yt = self.H.matmul(xt)           
             else:
                 yt = self.H.matmul(xt)
