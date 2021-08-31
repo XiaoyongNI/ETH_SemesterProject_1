@@ -62,10 +62,10 @@ sys_model_partialh.InitSequence(m1_0, m2_0)
 ###################################
 ### Data Loader (Generate Data) ###
 ###################################
-dataFolderName = 'Data' + '/'
-dataFileName = 'data_2x2_Ttest100.pt'
-print("Start Gen Data")
-DataGen(sys_model, dataFolderName + dataFileName, T, T_test)
+dataFolderName = 'Simulations/Linear_canonical' + '/'
+dataFileName = '2x2_rq-1010_T100.pt'
+# print("Start Gen Data")
+# DataGen(sys_model, dataFolderName + dataFileName, T, T_test)
 print("Data Load")
 [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName)
 print("trainset size:",train_target.size())
@@ -75,14 +75,18 @@ print("testset size:",test_target.size())
 ##############################
 ### Evaluate Kalman Filter ###
 ##############################
-print("Evaluate Kalman Filter")
+print("Evaluate Kalman Filter True")
 [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
+print("Evaluate Kalman Filter Partial")
+[MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = KFTest(sys_model_partialh, test_input, test_target)
 
 ##############################
 ### Evaluate RTS Smoother ###
 ##############################
-print("Evaluate RTS Smoother")
+print("Evaluate RTS Smoother True")
 [MSE_RTS_linear_arr, MSE_RTS_linear_avg, MSE_RTS_dB_avg] = S_Test(sys_model, test_input, test_target)
+print("Evaluate RTS Smoother Partial")
+[MSE_RTS_linear_arr_partialh, MSE_RTS_linear_avg_partialh, MSE_RTS_dB_avg_partialh] = S_Test(sys_model_partialh, test_input, test_target)
 
 ##############################
 ###  Compare KF and RTS    ###
@@ -125,12 +129,30 @@ RTSNet_model.NNBuild(sys_model)
 RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
 RTSNet_Pipeline.setssModel(sys_model)
 RTSNet_Pipeline.setModel(RTSNet_model)
-RTSNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-6)
-# RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
+RTSNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=5E-3, weightDecay=1E-6)
+RTSNet_Pipeline.model = torch.load('RTSNet/best-model.pt',map_location=dev)
 [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
 ## Test Neural Network
 [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 RTSNet_Pipeline.save()
+
+# RTSNet with mismatched model
+## Build Neural Network
+print("RTSNet with observation model mismatch")
+RTSNet_model = RTSNetNN()
+RTSNet_model.NNBuild(sys_model_partialh)
+## Train Neural Network
+RTSNet_Pipeline = Pipeline(strTime, "RTSNetPartialH", "RTSNetPartialH")
+RTSNet_Pipeline.setssModel(sys_model_partialh)
+RTSNet_Pipeline.setModel(RTSNet_model)
+RTSNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-6)
+# RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
+[MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model_partialh, cv_input, cv_target, train_input, train_target, path_results)
+## Test Neural Network
+[MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model_partialh, test_input, test_target, path_results)
+RTSNet_Pipeline.save()
+
+
 # DatafolderName = 'Data' + '/'
 # DataResultName = '10x10_Ttest1000' 
 # torch.save({
