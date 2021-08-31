@@ -20,6 +20,7 @@ class SystemModel:
         self.q = q
         self.Q = q * q * torch.eye(self.m)
 
+
         #########################
         ### Observation Model ###
         #########################
@@ -53,8 +54,12 @@ class SystemModel:
         else:
             self.prior_S = prior_S
 
-
-
+    def f(self, x):
+        return torch.matmul(self.F, x)
+    
+    def h(self, x):
+        return torch.matmul(self.H, x)
+        
     #####################
     ### Init Sequence ###
     #####################
