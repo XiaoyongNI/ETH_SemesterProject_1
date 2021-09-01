@@ -42,7 +42,7 @@ path_results = 'RTSNet/'
 ####################
 ### Design Model ###
 ####################
-r2 = torch.tensor([1])
+r2 = torch.tensor([1e-3])
 vdB = -20 # ratio v=q2/r2
 v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
@@ -63,7 +63,7 @@ sys_model_partialh.InitSequence(m1_0, m2_0)
 ### Data Loader (Generate Data) ###
 ###################################
 dataFolderName = 'Simulations/Linear_canonical' + '/'
-dataFileName = '2x2_rq020_T100_Ttest100randinit.pt'
+dataFileName = '2x2_rq3050_T100_Ttest100randinit.pt'
 print("Start Gen Data")
 DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=True)
 print("Data Load")
