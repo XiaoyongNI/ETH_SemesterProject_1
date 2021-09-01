@@ -63,9 +63,9 @@ sys_model_partialh.InitSequence(m1_0, m2_0)
 ### Data Loader (Generate Data) ###
 ###################################
 dataFolderName = 'Simulations/Linear_canonical' + '/'
-dataFileName = '2x2_rq020_T100.pt'
-# print("Start Gen Data")
-# DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=True)
+dataFileName = '5x5_rq020_T100.pt'
+print("Start Gen Data")
+DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
 print("Data Load")
 [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName)
 print("trainset size:",train_target.size())
@@ -75,16 +75,16 @@ print("testset size:",test_target.size())
 ##############################
 ### Evaluate Kalman Filter ###
 ##############################
-# print("Evaluate Kalman Filter True")
-# [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
+print("Evaluate Kalman Filter True")
+[MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
 # print("Evaluate Kalman Filter Partial")
 # [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = KFTest(sys_model_partialh, test_input, test_target)
 
 ##############################
 ### Evaluate RTS Smoother ###
 ##############################
-# print("Evaluate RTS Smoother True")
-# [MSE_RTS_linear_arr, MSE_RTS_linear_avg, MSE_RTS_dB_avg] = S_Test(sys_model, test_input, test_target)
+print("Evaluate RTS Smoother True")
+[MSE_RTS_linear_arr, MSE_RTS_linear_avg, MSE_RTS_dB_avg] = S_Test(sys_model, test_input, test_target)
 # print("Evaluate RTS Smoother Partial")
 # [MSE_RTS_linear_arr_partialh, MSE_RTS_linear_avg_partialh, MSE_RTS_dB_avg_partialh] = S_Test(sys_model_partialh, test_input, test_target)
 
