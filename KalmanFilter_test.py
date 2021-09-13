@@ -11,10 +11,10 @@ def KFTest(SysModel, test_input, test_target):
 
     # MSE [Linear]
     MSE_KF_linear_arr = torch.empty(N_T)
-
+    start = time.time()
     KF = KalmanFilter(SysModel)
     KF.InitSequence(SysModel.m1x_0, SysModel.m2x_0)
-    start = time.time()
+    
     for j in range(0, N_T):
 
         KF.GenerateSequence(test_input[j, :, :], KF.T_test)

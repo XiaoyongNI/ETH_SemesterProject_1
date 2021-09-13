@@ -13,13 +13,13 @@ def EKFTest(SysModel, test_input, test_target, modelKnowledge = 'full', allState
     
     # MSE [Linear]
     MSE_EKF_linear_arr = torch.empty(N_T)
-
+    start = time.time()
     EKF = ExtendedKalmanFilter(SysModel, modelKnowledge)
     EKF.InitSequence(SysModel.m1x_0, SysModel.m2x_0)
 
     KG_array = torch.zeros_like(EKF.KG_array)
     EKF_out = torch.empty([N_T, SysModel.m, SysModel.T_test])
-    start = time.time()
+    
     for j in range(0, N_T):
         EKF.GenerateSequence(test_input[j, :, :], EKF.T_test)
 
