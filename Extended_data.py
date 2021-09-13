@@ -15,16 +15,16 @@ else:
 #######################
 
 # Number of Training Examples
-N_E = 1000
+N_E = 10000
 
 # Number of Cross Validation Examples
 N_CV = 100
 
-N_T = 200
+N_T = 20
 
 # Sequence Length for Linear Case
-T = 100
-T_test = 100
+T = 20
+T_test = 1000
 
 #################
 ## Design #10 ###
@@ -66,24 +66,24 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 #############
 ### 5 x 5 ###
 #############
-m = 5
-n = 5
-F = F10[0:m, 0:m]
-H = H10[0:n, 10-m:10]
-m1_0 = torch.zeros(m, 1).to(dev)
-# m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]]).to(dev)
-m2_0 = 0 * 0 * torch.eye(m).to(dev)
+# m = 5
+# n = 5
+# F = F10[0:m, 0:m]
+# H = H10[0:n, 10-m:10]
+# m1_0 = torch.zeros(m, 1).to(dev)
+# # m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]]).to(dev)
+# m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 ##############
 ## 10 x 10 ###
 ##############
-# m = 10
-# n = 10
-# F = F10[0:m, 0:m]
-# H = H10
-# m1_0 = torch.zeros(m, 1).to(dev)
-# # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-# m2_0 = 0 * 0 * torch.eye(m).to(dev)
+m = 10
+n = 10
+F = F10[0:m, 0:m]
+H = H10
+m1_0 = torch.zeros(m, 1).to(dev)
+# m1x_0_design = torch.tensor([[10.0], [-10.0]])
+m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 
 # Inaccurate model knowledge based on matrix rotation
