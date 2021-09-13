@@ -33,7 +33,7 @@ def S_Test(SysModel, test_input, test_target, modelKnowledge = 'full'):
     # Print Run Time
     print("Inference Time:", t)
 
-    return [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out,t]
+    return [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out]
 
 
 
