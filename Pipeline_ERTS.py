@@ -172,17 +172,17 @@ class Pipeline_ERTS:
                     else:
                         init_conditions = SysModel.m1x_0
 
-                    self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)   
+                    self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)   
                     y_cv = cv_input[j, :, :]
 
-                    x_out_cv_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
-                    x_out_cv = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
-                    for t in range(0, SysModel.T):
+                    x_out_cv_forward = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                    x_out_cv = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                    for t in range(0, SysModel.T_test):
                         x_out_cv_forward[:, t] = self.model(y_cv[:, t], None, None, None)
-                    x_out_cv[:, SysModel.T-1] = x_out_cv_forward[:, SysModel.T-1] # backward smoothing starts from x_T|T
-                    self.model.InitBackward(x_out_cv[:, SysModel.T-1]) 
-                    x_out_cv[:, SysModel.T-2] = self.model(None, x_out_cv_forward[:, SysModel.T-2], x_out_cv_forward[:, SysModel.T-1],None)
-                    for t in range(SysModel.T-3, -1, -1):
+                    x_out_cv[:, SysModel.T_test-1] = x_out_cv_forward[:, SysModel.T_test-1] # backward smoothing starts from x_T|T
+                    self.model.InitBackward(x_out_cv[:, SysModel.T_test-1]) 
+                    x_out_cv[:, SysModel.T_test-2] = self.model(None, x_out_cv_forward[:, SysModel.T_test-2], x_out_cv_forward[:, SysModel.T_test-1],None)
+                    for t in range(SysModel.T_test-3, -1, -1):
                         x_out_cv[:, t] = self.model(None, x_out_cv_forward[:, t], x_out_cv_forward[:, t+1],x_out_cv[:, t+2])
 
                     # Compute Training Loss

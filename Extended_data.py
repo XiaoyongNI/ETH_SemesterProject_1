@@ -18,7 +18,7 @@ else:
 N_E = 10000
 
 # Number of Cross Validation Examples
-N_CV = 100
+N_CV = 5
 
 N_T = 20
 
@@ -119,7 +119,7 @@ def DataGen(SysModel_data, fileName, T, T_test,randomInit=False):
     ####################################
     ### Generate Validation Sequence ###
     ####################################
-    SysModel_data.GenerateBatch(N_CV, T, randomInit=randomInit)
+    SysModel_data.GenerateBatch(N_CV, T_test, randomInit=randomInit)
     cv_input = SysModel_data.Input
     cv_target = SysModel_data.Target
 
