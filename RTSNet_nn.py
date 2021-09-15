@@ -99,7 +99,7 @@ class RTSNetNN(KalmanNetNN):
     ### Initialize Backward Sequence ###
     ####################################
     def InitBackward(self, filter_x):
-        self.s_m1x_nexttime = torch.squeeze(filter_x)
+        self.s_m1x_nexttime = filter_x
 
     ##############################
     ### Innovation Computation ###
