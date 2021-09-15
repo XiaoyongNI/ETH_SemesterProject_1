@@ -219,8 +219,8 @@ class KalmanNetNN(torch.nn.Module):
         self.i += 1
 
         # Innovation
-        y_obs = torch.unsqueeze(y, 1)
-        dy = y_obs - self.m1y
+        # y_obs = torch.unsqueeze(y, 1)
+        dy = y - self.m1y
 
         # Compute the 1-st posterior moment
         INOV = torch.matmul(self.KGain, dy)
