@@ -162,7 +162,7 @@ class KalmanNetNN(torch.nn.Module):
         self.T = T
         self.x_out = torch.empty(self.m, T).to(dev, non_blocking=True)
 
-        self.m1x_posterior = M1_0.to(dev, non_blocking=True)
+        self.m1x_posterior = torch.squeeze(M1_0).to(dev, non_blocking=True)
         self.m1x_posterior_previous = self.m1x_posterior.to(dev, non_blocking=True)
         self.m1x_prior_previous = self.m1x_posterior.to(dev, non_blocking=True)
         self.y_previous = self.h(self.m1x_posterior).to(dev, non_blocking=True)
@@ -176,10 +176,10 @@ class KalmanNetNN(torch.nn.Module):
     ######################
     def step_prior(self):
         # Predict the 1-st moment of x
-        self.m1x_prior = self.f(self.m1x_posterior)
+        self.m1x_prior = torch.squeeze(self.f(self.m1x_posterior))
 
         # Predict the 1-st moment of y
-        self.m1y = self.h(self.m1x_prior)
+        self.m1y = torch.squeeze(self.h(self.m1x_prior))
 
     ##############################
     ### Kalman Gain Estimation ###
@@ -316,7 +316,7 @@ class KalmanNetNN(torch.nn.Module):
     ### Forward ###
     ###############
     def forward(self, y):
-        y = y.to(dev, non_blocking=True)
+        y = torch.squeeze(y).to(dev, non_blocking=True)
 
         '''
         for t in range(0, self.T):
