@@ -52,7 +52,7 @@ sequential_training = False
 path_results = 'ERTSNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data/T2000_NT100' + '/'
 
-r2 = torch.tensor([1])
+r2 = torch.tensor([1e-3])
 # r2 = torch.tensor([100, 10, 1, 0.1, 0.01])
 r = torch.sqrt(r2)
 vdB = -20 # ratio v=q2/r2
@@ -61,21 +61,21 @@ v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
 q = torch.sqrt(q2)
 
-r2optdB = torch.tensor([3.0103])
+r2optdB = torch.tensor([32])
 ropt = torch.sqrt(10**(-r2optdB/10))
-q2optdB = torch.tensor([18.2391])
+q2optdB = torch.tensor([48])
 qopt = torch.sqrt(10**(-q2optdB/10))
 print("1/r2 [dB]: ", 10 * torch.log10(1/r[0]**2))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q[0]**2))
 
 # traj_resultName = ['traj_lor_KNetFull_rq1030_T2000_NT100.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
-dataFileName = ['data_lor_v20_rq020_T2000.pt']#,'data_lor_v20_r1e-2_T100.pt','data_lor_v20_r1e-3_T100.pt','data_lor_v20_r1e-4_T100.pt']
-KFRTSResultName = 'KFRTS_partialh_rq020_T2000' 
+dataFileName = ['data_lor_v20_rq3050_T2000.pt']#,'data_lor_v20_r1e-2_T100.pt','data_lor_v20_r1e-3_T100.pt','data_lor_v20_r1e-4_T100.pt']
+KFRTSResultName = 'KFRTS_partialh_rq3050_T2000' 
 
 #Generate and load data DT case
 sys_model = SystemModel(f, q[0], h, r[0], T, T_test, m, n,"Lor")
 sys_model.InitSequence(m1x_0, m2x_0)
-TraindataFileName = 'data_lor_rq020_TrainT100.pt'
+TraindataFileName = 'data_lor_rq3050_TrainT100.pt'
 print("Start Data Gen")
 DataGen(sys_model, DatafolderName + TraindataFileName, T, T_test)  
 print("Data Load")
