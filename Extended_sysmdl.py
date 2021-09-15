@@ -108,11 +108,8 @@ class SystemModel:
             else:
                 xt = self.f(self.x_prev)
                 mean = torch.zeros([self.m])
-                if self.modelname == "pendulum":
-                    distrib = MultivariateNormal(loc=mean, covariance_matrix=Q_gen)
-                    eq = distrib.rsample()
-                else:
-                    eq = torch.normal(mean, self.q)
+                
+                eq = torch.normal(mean, self.q)
                          
                 # Additive Process Noise
                 xt = torch.add(xt,eq)
