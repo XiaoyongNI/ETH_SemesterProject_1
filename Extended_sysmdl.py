@@ -61,9 +61,8 @@ class SystemModel:
     #####################
     def InitSequence(self, m1x_0, m2x_0):
 
-        self.m1x_0 = m1x_0
-        self.x_prev = m1x_0
-        self.m2x_0 = m2x_0
+        self.m1x_0 = torch.squeeze(m1x_0).to(dev)
+        self.m2x_0 = torch.squeeze(m2x_0).to(dev)
 
 
     #########################
