@@ -54,13 +54,13 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 ############
 ## 2 x 2 ###
 ############
-# m = 2
-# n = 2
-# F = F10[0:m, 0:m]
-# H = torch.eye(2)
-# m1_0 = torch.tensor([[0.0], [0.0]]).to(dev)
-# # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-# m2_0 = 0 * 0 * torch.eye(m).to(dev)
+m = 2
+n = 2
+F = F10[0:m, 0:m]
+H = torch.eye(2)
+m1_0 = torch.tensor([[0.0], [0.0]]).to(dev)
+# m1x_0_design = torch.tensor([[10.0], [-10.0]])
+m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 
 #############
@@ -77,13 +77,13 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 ##############
 ## 10 x 10 ###
 ##############
-m = 10
-n = 10
-F = F10[0:m, 0:m]
-H = H10
-m1_0 = torch.zeros(m, 1).to(dev)
-# m1x_0_design = torch.tensor([[10.0], [-10.0]])
-m2_0 = 0 * 0 * torch.eye(m).to(dev)
+# m = 10
+# n = 10
+# F = F10[0:m, 0:m]
+# H = H10
+# m1_0 = torch.zeros(m, 1).to(dev)
+# # m1x_0_design = torch.tensor([[10.0], [-10.0]])
+# m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 
 # Inaccurate model knowledge based on matrix rotation

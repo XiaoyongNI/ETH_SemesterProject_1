@@ -20,7 +20,7 @@ class SystemModel:
 
         self.q = q
         self.m = m
-
+        self.Q = q * q * torch.eye(self.m)
         #########################
         ### Observation Model ###
         #########################
@@ -28,7 +28,7 @@ class SystemModel:
 
         self.r = r
         self.n = n
-
+        self.R = r * r * torch.eye(self.n)
         ################
         ### Sequence ###
         ################
