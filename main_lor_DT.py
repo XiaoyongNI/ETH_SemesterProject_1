@@ -86,8 +86,8 @@ else:
    print("no chopping") 
    train_target = train_target_long[:,:,0:T]
    train_input = train_input_long[:,:,0:T]  
-cv_target = cv_target[0,:,:]
-cv_input = cv_input[0,:,:]   
+cv_target = cv_target[0:1,:,:]
+cv_input = cv_input[0:1,:,:]   
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
