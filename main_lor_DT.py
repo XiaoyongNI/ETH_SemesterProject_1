@@ -82,12 +82,14 @@ print(dataFileName[0])
 if chop: 
    print("chop training data")    
    [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+   [cv_target, cv_input] = Short_Traj_Split(cv_target, cv_input, T)
 else:
    print("no chopping") 
    train_target = train_target_long[:,:,0:T]
-   train_input = train_input_long[:,:,0:T]  
-cv_target = cv_target[0:1,:,:]
-cv_input = cv_input[0:1,:,:]   
+   train_input = train_input_long[:,:,0:T] 
+   cv_target = cv_target[:,:,0:T]
+   cv_input = cv_input[:,:,0:T]  
+ 
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
