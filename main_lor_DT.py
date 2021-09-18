@@ -79,7 +79,7 @@ dataFileName = ['data_lor_v20_rq020_T200.pt']#,'data_lor_v20_r1e-2_T100.pt','dat
 sys_model = SystemModel(f, q[0], h, r[0], T, T_test, m, n,"Lor")
 sys_model.InitSequence(m1x_0, m2x_0)
 print("Start Data Gen")
-DataGen(sys_model, DatafolderName + dataFileName, T, T_test,randomInit=False)
+DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test,randomInit=False)
 print("Data Load")
 print(dataFileName[0])
 [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[0],map_location=dev)  
