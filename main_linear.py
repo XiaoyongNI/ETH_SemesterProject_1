@@ -62,7 +62,7 @@ sys_model_partialh.InitSequence(m1_0, m2_0)
 ###################################
 dataFolderName = 'Simulations/Linear_canonical' + '/'
 dataFileName = '10x10_rq020_T1000.pt'
-print("Start Gen Data")
+print("Start Data Gen")
 DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
 print("Data Load")
 [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName)
