@@ -82,14 +82,15 @@ print(dataFileName[0])
 if chop: 
    print("chop training data")    
    [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
-   [cv_target, cv_input] = Short_Traj_Split(cv_target, cv_input, T)
+   # [cv_target, cv_input] = Short_Traj_Split(cv_target, cv_input, T)
 else:
    print("no chopping") 
    train_target = train_target_long[:,:,0:T]
    train_input = train_input_long[:,:,0:T] 
-   cv_target = cv_target[:,:,0:T]
-   cv_input = cv_input[:,:,0:T]  
- 
+   # cv_target = cv_target[:,:,0:T]
+   # cv_input = cv_input[:,:,0:T]  
+cv_target = cv_target[0:1,:,:]
+cv_input = cv_input[0:1,:,:] 
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())
 print("testset size:",test_target.size())
@@ -116,11 +117,11 @@ for rindex in range(0, len(ropt)):
    # [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial, t_PF] = PFTest(sys_model_partialh, test_input, test_target, init_cond=None)
    # print(f"MSE PF H NL: {MSE_PF_dB_avg_partial} [dB] (T = {T_test})")
    #Evaluate RTS true
-   print("Evaluate RTS true")
-   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
-   #Evaluate RTS partialh optr
-   print("Evaluate RTS partial")
-   [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
+   # print("Evaluate RTS true")
+   # [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
+   # #Evaluate RTS partialh optr
+   # print("Evaluate RTS partial")
+   # [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
    
    
    # Save results
@@ -163,7 +164,7 @@ for rindex in range(0, len(ropt)):
    RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
    RTSNet_Pipeline.setssModel(sys_model)
    RTSNet_Pipeline.setModel(RTSNet_model)
-   RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=50, learningRate=1e-3, weightDecay=1e-6) 
+   RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=20, learningRate=1e-4, weightDecay=1e-6) 
    # RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
    [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
    ## Test Neural Network
