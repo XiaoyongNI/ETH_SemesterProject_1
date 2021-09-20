@@ -56,7 +56,7 @@ data_gen_file = torch.load(DatafolderName+data_gen, map_location=cuda0)
 [true_sequence] = data_gen_file['All Data']
 
 r = torch.tensor([1.])
-lambda_q = torch.tensor([0.8])
+lambda_q = torch.tensor([0.3873])
 traj_resultName = ['traj_lor_dec_RTSNetJ2_r0.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
 # EKFResultName = 'EKF_obsmis_rq1030_T2000_NT100' 
 
@@ -96,6 +96,20 @@ for rindex in range(0, len(r)):
    # [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial, t_PF] = PFTest(sys_model, test_input, test_target, init_cond=None)
    # print(f"MSE PF J=2: {MSE_PF_dB_avg} [dB] (T = {T_test})")
    
+   # EKF
+   print("Start EKF test")
+   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model_true, test_input, test_target)
+   print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
+   [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model, test_input, test_target)
+   print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
+
+   # MB Extended RTS
+   print("Start RTS test")
+   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model_true, test_input, test_target)
+   print(f"MSE RTS J=5: {MSE_ERTS_dB_avg} [dB] (T = {T_test})")
+   [MSE_ERTS_linear_arr_partial, MSE_ERTS_linear_avg_partial, MSE_ERTS_dB_avg_partial, ERTS_out_partial] = S_Test(sys_model, test_input, test_target)
+   print(f"MSE RTS J=2: {MSE_ERTS_dB_avg_partial} [dB] (T = {T_test})")
+   
    # KNet with model mismatch
    # ## Build Neural Network
    # KNet_model = KalmanNetNN()
@@ -131,7 +145,11 @@ for rindex in range(0, len(r)):
    trajfolderName = 'ERTSNet' + '/'
    DataResultName = traj_resultName[rindex]
    torch.save({#'PF J=5':PF_out,
-   #             'PF J=2':PF_out_partial,
+               #'PF J=2':PF_out_partial,
+               'EKF J=5':EKF_out,
+               'EKF J=2':EKF_out_partial,
+               'RTS J=5':ERTS_out,
+               'RTS J=2':ERTS_out_partial,
                'RTSNet': rtsnet_out,
                }, trajfolderName+DataResultName)
 
