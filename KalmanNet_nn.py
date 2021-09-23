@@ -168,8 +168,8 @@ class KalmanNetNN(torch.nn.Module):
         self.y_previous = self.h(self.m1x_posterior).to(dev, non_blocking=True)
 
         # KGain saving
-        self.i = 0
-        self.KGain_array = self.KG_array = torch.zeros((self.T,self.m,self.n)).to(dev, non_blocking=True)
+        # self.i = 0
+        # self.KGain_array = self.KG_array = torch.zeros((self.T,self.m,self.n)).to(dev, non_blocking=True)
 
     ######################
     ### Compute Priors ###
@@ -215,8 +215,8 @@ class KalmanNetNN(torch.nn.Module):
         self.step_KGain_est(y)
 
         # Save KGain in array
-        self.KGain_array[self.i] = self.KGain
-        self.i += 1
+        # self.KGain_array[self.i] = self.KGain
+        # self.i += 1
 
         # Innovation
         # y_obs = torch.unsqueeze(y, 1)
