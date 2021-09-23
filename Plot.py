@@ -3,6 +3,7 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 1E4
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import numpy as np
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
@@ -581,7 +582,7 @@ class Plot_extended(Plot_RTS):
         i=0
         for title in titles:
             inputs_numpy = inputs[i].detach().numpy()
-            gs1.update(wspace=-0.3,hspace=-0.3)
+            # gs1.update(wspace=-0.3,hspace=-0.3)
             if(dim==3):
                 plt.rcParams["figure.frameon"] = False
                 ax = fig.add_subplot(gs1[i],projection='3d')

@@ -144,8 +144,12 @@ for rindex in range(0, len(r)):
    # Save trajectories
    trajfolderName = 'ERTSNet' + '/'
    DataResultName = traj_resultName[rindex]
+   target_sample = torch.reshape(test_target[0,:,:],[1,m,T_test])
+   input_sample = torch.reshape(test_input[0,:,:],[1,n,T_test])
    torch.save({#'PF J=5':PF_out,
                #'PF J=2':PF_out_partial,
+               'True':target_sample,
+               'Observation':input_sample,
                'EKF J=5':EKF_out,
                'EKF J=2':EKF_out_partial,
                'RTS J=5':ERTS_out,
