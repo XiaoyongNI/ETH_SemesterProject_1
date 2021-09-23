@@ -220,7 +220,7 @@ class Pipeline_ERTS:
 
         return [self.MSE_cv_linear_epoch, self.MSE_cv_dB_epoch, self.MSE_train_linear_epoch, self.MSE_train_dB_epoch]
 
-    def NNTest(self, SysModel, test_input, test_target, path_results, nclt=False, rnn=False, IC=None):
+    def NNTest(self, SysModel, test_input, test_target, path_results, nclt=False, rnn=False, IC=None,multipass=False):
 
         self.N_T = test_input.size()[0]
 
@@ -248,16 +248,31 @@ class Pipeline_ERTS:
 
             y_mdl_tst = test_input[j, :, :]
 
-            x_out_test_forward = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+            x_out_test_forward_1 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
             x_out_test = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
             for t in range(0, SysModel.T_test):
-                x_out_test_forward[:, t] = self.model(y_mdl_tst[:, t], None, None, None)
-            x_out_test[:, SysModel.T_test-1] = x_out_test_forward[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
+                x_out_test_forward_1[:, t] = self.model(y_mdl_tst[:, t], None, None, None)
+            x_out_test[:, SysModel.T_test-1] = x_out_test_forward_1[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
             self.model.InitBackward(x_out_test[:, SysModel.T_test-1]) 
-            x_out_test[:, SysModel.T_test-2] = self.model(None, x_out_test_forward[:, SysModel.T_test-2], x_out_test_forward[:, SysModel.T_test-1],None)
+            x_out_test[:, SysModel.T_test-2] = self.model(None, x_out_test_forward_1[:, SysModel.T_test-2], x_out_test_forward_1[:, SysModel.T_test-1],None)
             for t in range(SysModel.T_test-3, -1, -1):
-                x_out_test[:, t] = self.model(None, x_out_test_forward[:, t], x_out_test_forward[:, t+1],x_out_test[:, t+2])
+                x_out_test[:, t] = self.model(None, x_out_test_forward_1[:, t], x_out_test_forward_1[:, t+1],x_out_test[:, t+2])
             
+            ########################################################################
+            # Second pass
+            x_out_test_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+            x_out_test_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+            for t in range(0, SysModel.T_test):
+                x_out_test_forward_2[:, t] = self.model(x_out_test[:, t], None, None, None)
+            x_out_test_2[:, SysModel.T_test-1] = x_out_test_forward_2[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
+            self.model.InitBackward(x_out_test_2[:, SysModel.T_test-1]) 
+            x_out_test_2[:, SysModel.T_test-2] = self.model(None, x_out_test_forward_2[:, SysModel.T_test-2], x_out_test_forward_2[:, SysModel.T_test-1],None)
+            for t in range(SysModel.T_test-3, -1, -1):
+                x_out_test_2[:, t] = self.model(None, x_out_test_forward_2[:, t], x_out_test_forward_2[:, t+1],x_out_test[:, t+2])
+            
+            if (multipass):
+                x_out_test = x_out_test_2
+
             if(nclt):
                 if x_out_test.size()[0] == 6:
                     mask = torch.tensor([True,False,False,True,False,False])

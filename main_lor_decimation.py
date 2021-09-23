@@ -57,7 +57,7 @@ data_gen_file = torch.load(DatafolderName+data_gen, map_location=cuda0)
 
 r = torch.tensor([1.])
 lambda_q = torch.tensor([0.3873])
-traj_resultName = ['traj_lor_dec_RTSNetJ2_r0.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
+traj_resultName = ['traj_lor_dec_RTSNetJ2_r0_2pass.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
 # EKFResultName = 'EKF_obsmis_rq1030_T2000_NT100' 
 
 for rindex in range(0, len(r)):
@@ -97,18 +97,18 @@ for rindex in range(0, len(r)):
    # print(f"MSE PF J=2: {MSE_PF_dB_avg} [dB] (T = {T_test})")
    
    # EKF
-   print("Start EKF test")
-   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model_true, test_input, test_target)
-   print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
-   [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model, test_input, test_target)
-   print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
+   # print("Start EKF test")
+   # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model_true, test_input, test_target)
+   # print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
+   # [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model, test_input, test_target)
+   # print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
 
-   # MB Extended RTS
-   print("Start RTS test")
-   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model_true, test_input, test_target)
-   print(f"MSE RTS J=5: {MSE_ERTS_dB_avg} [dB] (T = {T_test})")
-   [MSE_ERTS_linear_arr_partial, MSE_ERTS_linear_avg_partial, MSE_ERTS_dB_avg_partial, ERTS_out_partial] = S_Test(sys_model, test_input, test_target)
-   print(f"MSE RTS J=2: {MSE_ERTS_dB_avg_partial} [dB] (T = {T_test})")
+   # # MB Extended RTS
+   # print("Start RTS test")
+   # [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model_true, test_input, test_target)
+   # print(f"MSE RTS J=5: {MSE_ERTS_dB_avg} [dB] (T = {T_test})")
+   # [MSE_ERTS_linear_arr_partial, MSE_ERTS_linear_avg_partial, MSE_ERTS_dB_avg_partial, ERTS_out_partial] = S_Test(sys_model, test_input, test_target)
+   # print(f"MSE RTS J=2: {MSE_ERTS_dB_avg_partial} [dB] (T = {T_test})")
    
    # KNet with model mismatch
    # ## Build Neural Network
@@ -133,11 +133,11 @@ for rindex in range(0, len(r)):
    ## Train Neural Network
    RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
    RTSNet_Pipeline.setModel(RTSNet_model)
-   RTSNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
+   # RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
+   # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
    ## Test Neural Network
    # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results,multipass=True)
    # Print MSE Cross Validation
    print("MSE Test:", MSE_test_dB_avg, "[dB]")
    
@@ -148,12 +148,12 @@ for rindex in range(0, len(r)):
    input_sample = torch.reshape(test_input[0,:,:],[1,n,T_test])
    torch.save({#'PF J=5':PF_out,
                #'PF J=2':PF_out_partial,
-               'True':target_sample,
-               'Observation':input_sample,
-               'EKF J=5':EKF_out,
-               'EKF J=2':EKF_out_partial,
-               'RTS J=5':ERTS_out,
-               'RTS J=2':ERTS_out_partial,
+               # 'True':target_sample,
+               # 'Observation':input_sample,
+               # 'EKF J=5':EKF_out,
+               # 'EKF J=2':EKF_out_partial,
+               # 'RTS J=5':ERTS_out,
+               # 'RTS J=2':ERTS_out_partial,
                'RTSNet': rtsnet_out,
                }, trajfolderName+DataResultName)
 
