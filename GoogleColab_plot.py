@@ -44,7 +44,7 @@ TrajfolderName = 'ERTSNet/new_arch_LA/decimation/traj' + '/'
 # PipelineResultName = 'pipeline_KNet_obsmis_rq1030_T2000_NT100.pt'
 EKFResultName = 'EKF_obsmis_rq3050_T2000_NT100' 
 # DataResultName = 'data_lor_v20_rq1030_T2000.pt' 
-TrajResultName = 'traj_lor_dec_r0_J2.png'
+TrajResultName = 'Wellingstraj_lor_dec_all_r0.png'
 # ModelResultName = 'model_KalmanNet.pt'
 ###################################################################
 # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
@@ -80,18 +80,18 @@ TrajResultName = 'traj_lor_dec_r0_J2.png'
 
 ### Plot Trajectories Lor ###########################################
 # [train_input, train_target, cv_input, cv_target, test_input, test_target] = torch.load(DatafolderName+DataResultName, map_location=device)
-toTrajResultName = 'traj_lor_dec_TrueandObs.pt'
+toTrajResultName = 'Wellingstraj_lor_dec_all_r0.pt'
 totrajs = torch.load(TrajfolderName+toTrajResultName, map_location=device)
 # print(trajs.keys())
 target_sample = totrajs['True']
 input_sample = totrajs['Observation']
 
-erTrajResultName = 'traj_lor_dec_EKFandRTS_r0.pt'
+erTrajResultName = 'Wellingstraj_lor_dec_all_r0.pt'
 ertrajs = torch.load(TrajfolderName+erTrajResultName, map_location=device)
 # print(trajs.keys())
 mbrtsJ2 = ertrajs['RTS J=2']
 
-rtsTrajResultName = 'traj_lor_dec_RTSNetJ2_r0_MSE-15.5.pt'
+rtsTrajResultName = 'Wellingstraj_lor_dec_all_r0.pt'
 rtstrajs = torch.load(TrajfolderName+rtsTrajResultName, map_location=device)
 # print(trajs.keys())
 rtsnet = rtstrajs['RTSNet']
@@ -123,10 +123,10 @@ rtsnet = rtstrajs['RTSNet']
 # EKF_mean = EKF_mean[:,:,1000:1999]
 # KNet_mean = KNet_mean[:,:,1000:1999]
 # print(EKF_diff-EKF_mean)
-titles = ["True Trajectory","Observation","Extended RTS","RTSNet"]#, "Observation", "EKF J=2","EKF J=2 with optimal q"]
-input = [target_sample,input_sample, mbrtsJ2,rtsnet]#,EKF_sample,EKF_partial_sample,EKF_partialoptq_sample]
+titles = ["RTSNet"]#,"True Trajectory","Observation","Extended RTS",]#, "Observation", "EKF J=2","EKF J=2 with optimal q"]
+input = [rtsnet]#,target_sample,input_sample,mbrtsJ2, ]#,EKF_sample,EKF_partial_sample,EKF_partialoptq_sample]
 Net_Plot = Plot(TrajfolderName,TrajResultName)
-Net_Plot.plotTrajectories(input,3, titles,TrajfolderName+TrajResultName)
+Net_Plot.plotTrajectories(input,3, titles,TrajfolderName+"RTSNet.png")
 
 ################
 ### Outliers ###
