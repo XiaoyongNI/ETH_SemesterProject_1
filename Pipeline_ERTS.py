@@ -260,17 +260,16 @@ class Pipeline_ERTS:
             
             ########################################################################
             # Second pass
-            x_out_test_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
-            x_out_test_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
-            for t in range(0, SysModel.T_test):
-                x_out_test_forward_2[:, t] = self.model(x_out_test[:, t], None, None, None)
-            x_out_test_2[:, SysModel.T_test-1] = x_out_test_forward_2[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
-            self.model.InitBackward(x_out_test_2[:, SysModel.T_test-1]) 
-            x_out_test_2[:, SysModel.T_test-2] = self.model(None, x_out_test_forward_2[:, SysModel.T_test-2], x_out_test_forward_2[:, SysModel.T_test-1],None)
-            for t in range(SysModel.T_test-3, -1, -1):
-                x_out_test_2[:, t] = self.model(None, x_out_test_forward_2[:, t], x_out_test_forward_2[:, t+1],x_out_test[:, t+2])
-            
             if (multipass):
+                x_out_test_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+                x_out_test_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                for t in range(0, SysModel.T_test):
+                    x_out_test_forward_2[:, t] = self.model(x_out_test[:, t], None, None, None)
+                x_out_test_2[:, SysModel.T_test-1] = x_out_test_forward_2[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
+                self.model.InitBackward(x_out_test_2[:, SysModel.T_test-1]) 
+                x_out_test_2[:, SysModel.T_test-2] = self.model(None, x_out_test_forward_2[:, SysModel.T_test-2], x_out_test_forward_2[:, SysModel.T_test-1],None)
+                for t in range(SysModel.T_test-3, -1, -1):
+                    x_out_test_2[:, t] = self.model(None, x_out_test_forward_2[:, t], x_out_test_forward_2[:, t+1],x_out_test[:, t+2])          
                 x_out_test = x_out_test_2
 
             if(nclt):
