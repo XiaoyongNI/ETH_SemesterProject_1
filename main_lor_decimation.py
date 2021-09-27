@@ -158,6 +158,8 @@ for rindex in range(0, len(r)):
    RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
    RTSNet_Pipeline.setModel(RTSNet_model)
    RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
+   NumofParameter = RTSNet_Pipeline.count_parameters()
+   print("Number of parameters for RTSNet: ",NumofParameter)
    [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
    # Test Neural Network
    # RTSNet_Pipeline.model = torch.load('ERTSNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
