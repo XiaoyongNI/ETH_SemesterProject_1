@@ -99,8 +99,19 @@ for rindex in range(0, len(r)):
    states, meas = testdata
    test_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
    test_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   print(test_target.size())
-
+   print("testset size:",test_target.size())
+   traindata = [data[0][T_test:(T_test+T*N_E)], data[1][T_test:(T_test+T*N_E)]]
+   states, meas = traindata
+   train_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   train_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   [train_target, train_input] = Short_Traj_Split(train_target, train_input, T)
+   cvdata = [data[0][(T_test+T*N_E):], data[1][(T_test+T*N_E):]]
+   states, meas = testdata
+   cv_target_long =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   cv_input_long = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   [cv_target_long, cv_input_long] = Short_Traj_Split(cv_target_long, cv_input_long, T)
+   print("trainset size:",train_target.size())
+   print("cvset size:",cv_target_long.size())
 
    # Particle filter
    # print("Start PF test")
@@ -110,18 +121,18 @@ for rindex in range(0, len(r)):
    # print(f"MSE PF J=2: {MSE_PF_dB_avg} [dB] (T = {T_test})")
    
    # EKF
-   print("Start EKF test")
-   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model_true, test_input, test_target)
-   print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
-   [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model, test_input, test_target)
-   print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
+   # print("Start EKF test")
+   # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model_true, test_input, test_target)
+   # print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
+   # [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model, test_input, test_target)
+   # print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
 
-   # MB Extended RTS
-   print("Start RTS test")
-   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model_true, test_input, test_target)
-   print(f"MSE RTS J=5: {MSE_ERTS_dB_avg} [dB] (T = {T_test})")
-   [MSE_ERTS_linear_arr_partial, MSE_ERTS_linear_avg_partial, MSE_ERTS_dB_avg_partial, ERTS_out_partial] = S_Test(sys_model, test_input, test_target)
-   print(f"MSE RTS J=2: {MSE_ERTS_dB_avg_partial} [dB] (T = {T_test})")
+   # # MB Extended RTS
+   # print("Start RTS test")
+   # [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model_true, test_input, test_target)
+   # print(f"MSE RTS J=5: {MSE_ERTS_dB_avg} [dB] (T = {T_test})")
+   # [MSE_ERTS_linear_arr_partial, MSE_ERTS_linear_avg_partial, MSE_ERTS_dB_avg_partial, ERTS_out_partial] = S_Test(sys_model, test_input, test_target)
+   # print(f"MSE RTS J=2: {MSE_ERTS_dB_avg_partial} [dB] (T = {T_test})")
    
    # KNet with model mismatch
    # ## Build Neural Network
@@ -146,10 +157,10 @@ for rindex in range(0, len(r)):
    ## Train Neural Network
    RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
    RTSNet_Pipeline.setModel(RTSNet_model)
-   # RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
-   # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
-   ## Test Neural Network
-   # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
+   RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
+   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
+   # Test Neural Network
+   # RTSNet_Pipeline.model = torch.load('ERTSNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
    [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results,multipass=False)
    # Print MSE Cross Validation
    print("MSE Test:", MSE_test_dB_avg, "[dB]")
@@ -163,10 +174,10 @@ for rindex in range(0, len(r)):
                #'PF J=2':PF_out_partial,
                'True':target_sample,
                'Observation':input_sample,
-               'EKF J=5':EKF_out,
-               'EKF J=2':EKF_out_partial,
-               'RTS J=5':ERTS_out,
-               'RTS J=2':ERTS_out_partial,
+               # 'EKF J=5':EKF_out,
+               # 'EKF J=2':EKF_out_partial,
+               # 'RTS J=5':ERTS_out,
+               # 'RTS J=2':ERTS_out_partial,
                'RTSNet': rtsnet_out,
                }, trajfolderName+DataResultName)
 
