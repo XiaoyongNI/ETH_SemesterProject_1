@@ -261,6 +261,11 @@ class Pipeline_ERTS:
             ########################################################################
             # Second pass
             if (multipass):
+                self.model = torch.load(path_results+'/new_arch_LA/decimation/model/best-model_r0_J2_2passBaseOn-15.pt', map_location=dev)
+
+                self.model.eval()
+
+                torch.no_grad()
                 x_out_test_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
                 x_out_test_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
                 for t in range(0, SysModel.T_test):

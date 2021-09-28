@@ -76,42 +76,42 @@ for rindex in range(0, len(r)):
    sys_model.InitSequence(m1x_0, m2x_0)
 
    #Generate and load data Decimation case (chopped)
-   # print("Data Gen")
-   # [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
-   # print("testset size:",test_target.size())
-   # [train_target_long, train_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
-   # [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
-   # if chop:
-   #    print("chop training data")  
-   #    [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
-   # else:
-   #    print("no chopping") 
-   #    train_target = train_target_long
-   #    train_input = train_input_long
-   # print("trainset size:",train_target.size())
-   # print("cvset size:",cv_target_long.size())
-   
-   ## Load data from Welling's
-   compact_path = "ERTSNet/new_arch_LA/decimation/Welling_Compare/lorenz_trainset300k.pickle"
-   with open(compact_path, 'rb') as f:
-      data = pickle.load(f)
-   testdata = [data[0][0:T_test], data[1][0:T_test]]
-   states, meas = testdata
-   test_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   test_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   print("Data Gen")
+   [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
    print("testset size:",test_target.size())
-   traindata = [data[0][T_test:(T_test+T*N_E)], data[1][T_test:(T_test+T*N_E)]]
-   states, meas = traindata
-   train_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   train_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   [train_target, train_input] = Short_Traj_Split(train_target, train_input, T)
-   cvdata = [data[0][(T_test+T*N_E):], data[1][(T_test+T*N_E):]]
-   states, meas = cvdata
-   cv_target_long =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   cv_input_long = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
-   [cv_target_long, cv_input_long] = Short_Traj_Split(cv_target_long, cv_input_long, T)
+   [train_target_long, train_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
+   [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
+   if chop:
+      print("chop training data")  
+      [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+   else:
+      print("no chopping") 
+      train_target = train_target_long
+      train_input = train_input_long
    print("trainset size:",train_target.size())
    print("cvset size:",cv_target_long.size())
+   
+   ## Load data from Welling's
+   # compact_path = "ERTSNet/new_arch_LA/decimation/Welling_Compare/lorenz_trainset300k.pickle"
+   # with open(compact_path, 'rb') as f:
+   #    data = pickle.load(f)
+   # testdata = [data[0][0:T_test], data[1][0:T_test]]
+   # states, meas = testdata
+   # test_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # test_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # print("testset size:",test_target.size())
+   # traindata = [data[0][T_test:(T_test+T*N_E)], data[1][T_test:(T_test+T*N_E)]]
+   # states, meas = traindata
+   # train_target =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # train_input = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # [train_target, train_input] = Short_Traj_Split(train_target, train_input, T)
+   # cvdata = [data[0][(T_test+T*N_E):], data[1][(T_test+T*N_E):]]
+   # states, meas = cvdata
+   # cv_target_long =  torch.from_numpy(np.asarray(states, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # cv_input_long = torch.from_numpy(np.asarray(meas, dtype=np.float32).transpose(1,0)).unsqueeze(0)
+   # [cv_target_long, cv_input_long] = Short_Traj_Split(cv_target_long, cv_input_long, T)
+   # print("trainset size:",train_target.size())
+   # print("cvset size:",cv_target_long.size())
 
    # Particle filter
    # print("Start PF test")
@@ -157,13 +157,13 @@ for rindex in range(0, len(r)):
    ## Train Neural Network
    RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
    RTSNet_Pipeline.setModel(RTSNet_model)
-   RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
-   NumofParameter = RTSNet_Pipeline.count_parameters()
-   print("Number of parameters for RTSNet: ",NumofParameter)
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
+   # RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=1, learningRate=1e-3, weightDecay=1e-4)
+   # NumofParameter = RTSNet_Pipeline.count_parameters()
+   # print("Number of parameters for RTSNet: ",NumofParameter)
+   # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results)
    # Test Neural Network
    # RTSNet_Pipeline.model = torch.load('ERTSNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results,multipass=False)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results,multipass=True)
    # Print MSE Cross Validation
    print("MSE Test:", MSE_test_dB_avg, "[dB]")
    
