@@ -48,7 +48,7 @@ class Pipeline_ERTS:
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min',factor=0.9, patience=20)
 
 
-    def NNTrain(self, SysModel, cv_input, cv_target, train_input, train_target, path_results, nclt=False, sequential_training=False, rnn=False, epochs=None, train_IC=None, CV_IC=None):
+    def NNTrain(self, SysModel, cv_input, cv_target, train_input, train_target, path_results, nclt=False, sequential_training=False, rnn=False, epochs=None, train_IC=None, CV_IC=None, multipass=False):
 
         self.N_E = train_input.size()[0]
         self.N_CV = cv_input.size()[0]
@@ -112,6 +112,18 @@ class Pipeline_ERTS:
                 x_out_training[:, SysModel.T-2] = self.model(None, x_out_training_forward[:, SysModel.T-2], x_out_training_forward[:, SysModel.T-1],None)
                 for t in range(SysModel.T-3, -1, -1):
                     x_out_training[:, t] = self.model(None, x_out_training_forward[:, t], x_out_training_forward[:, t+1],x_out_training[:, t+2])
+                
+                if (multipass):
+                    x_out_train_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+                    x_out_train_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                    for t in range(0, SysModel.T_test):
+                        x_out_train_forward_2[:, t] = self.model(x_out_training[:, t], None, None, None)
+                    x_out_train_2[:, SysModel.T_test-1] = x_out_train_forward_2[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
+                    self.model.InitBackward(x_out_train_2[:, SysModel.T_test-1]) 
+                    x_out_train_2[:, SysModel.T_test-2] = self.model(None, x_out_train_forward_2[:, SysModel.T_test-2], x_out_train_forward_2[:, SysModel.T_test-1],None)
+                    for t in range(SysModel.T_test-3, -1, -1):
+                        x_out_train_2[:, t] = self.model(None, x_out_train_forward_2[:, t], x_out_train_forward_2[:, t+1],x_out_training[:, t+2])          
+                    x_out_training = x_out_train_2
 
                 # Compute Training Loss
                 if(nclt):
@@ -184,6 +196,18 @@ class Pipeline_ERTS:
                     x_out_cv[:, SysModel.T_test-2] = self.model(None, x_out_cv_forward[:, SysModel.T_test-2], x_out_cv_forward[:, SysModel.T_test-1],None)
                     for t in range(SysModel.T_test-3, -1, -1):
                         x_out_cv[:, t] = self.model(None, x_out_cv_forward[:, t], x_out_cv_forward[:, t+1],x_out_cv[:, t+2])
+                    
+                    if (multipass):
+                        x_out_cv_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
+                        x_out_cv_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+                        for t in range(0, SysModel.T_test):
+                            x_out_cv_forward_2[:, t] = self.model(x_out_cv[:, t], None, None, None)
+                        x_out_cv_2[:, SysModel.T_test-1] = x_out_cv_forward_2[:, SysModel.T_test-1] # backward smoothing starts from x_T|T 
+                        self.model.InitBackward(x_out_cv_2[:, SysModel.T_test-1]) 
+                        x_out_cv_2[:, SysModel.T_test-2] = self.model(None, x_out_cv_forward_2[:, SysModel.T_test-2], x_out_cv_forward_2[:, SysModel.T_test-1],None)
+                        for t in range(SysModel.T_test-3, -1, -1):
+                            x_out_cv_2[:, t] = self.model(None, x_out_cv_forward_2[:, t], x_out_cv_forward_2[:, t+1],x_out_cv[:, t+2])          
+                        x_out_cv = x_out_cv_2
 
                     # Compute Training Loss
                     if(nclt):
@@ -261,11 +285,6 @@ class Pipeline_ERTS:
             ########################################################################
             # Second pass
             if (multipass):
-                self.model = torch.load(path_results+'/new_arch_LA/decimation/model/best-model_r0_J2_2passBaseOn-15.pt', map_location=dev)
-
-                self.model.eval()
-
-                torch.no_grad()
                 x_out_test_forward_2 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
                 x_out_test_2 = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
                 for t in range(0, SysModel.T_test):
