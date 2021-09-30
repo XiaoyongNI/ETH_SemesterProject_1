@@ -8,6 +8,7 @@ from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_pertur
 from Extended_data import N_E, N_CV, N_T
 from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 from Pipeline_EKF import Pipeline_EKF
+from Pipeline_EKF_unsupervised import Pipeline_EKF_unsupervised
 # from PF_test import PFTest
 
 from datetime import datetime
@@ -78,8 +79,8 @@ dataFileName = ['data_lor_v20_rq1030_T200.pt']#,'data_lor_v20_r1e-2_T100.pt','da
 #Generate and load data DT case
 sys_model = SystemModel(f, q[0], h, r[0], T, T_test, m, n)
 sys_model.InitSequence(m1x_0, m2x_0)
-print("Start Data Gen")
-DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test,randomInit=False)
+# print("Start Data Gen")
+# DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test,randomInit=False)
 print("Data Load")
 print(dataFileName[0])
 [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[0],map_location=dev)  
@@ -121,11 +122,11 @@ for rindex in range(0, len(r)):
    # [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial, t_PF] = PFTest(sys_model_partialh, test_input, test_target, init_cond=None)
    # print(f"MSE PF H NL: {MSE_PF_dB_avg_partial} [dB] (T = {T_test})")
    #Evaluate RTS true
-   print("Evaluate RTS true")
-   [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
-   #Evaluate RTS partialh optr
-   print("Evaluate RTS partial")
-   [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
+   # print("Evaluate RTS true")
+   # [MSE_ERTS_linear_arr, MSE_ERTS_linear_avg, MSE_ERTS_dB_avg, ERTS_out] = S_Test(sys_model, test_input, test_target)
+   # #Evaluate RTS partialh optr
+   # print("Evaluate RTS partial")
+   # [MSE_ERTS_linear_arr_partialoptr, MSE_ERTS_linear_avg_partialoptr, MSE_ERTS_dB_avg_partialoptr, ERTS_out_partialoptr] = S_Test(sys_model_partialh, test_input, test_target)
    
    
    # Save results
@@ -161,18 +162,18 @@ for rindex in range(0, len(r)):
 
    # RTSNet with full info
    ## Build Neural Network
-   print("RTSNet with full model info")
-   RTSNet_model = RTSNetNN()
-   RTSNet_model.NNBuild(sys_model)
-   ## Train Neural Network
-   RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
-   RTSNet_Pipeline.setssModel(sys_model)
-   RTSNet_Pipeline.setModel(RTSNet_model)
-   RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=30, learningRate=1e-3, weightDecay=1e-6) 
-   # RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
-   ## Test Neural Network
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
+   # print("RTSNet with full model info")
+   # RTSNet_model = RTSNetNN()
+   # RTSNet_model.NNBuild(sys_model)
+   # ## Train Neural Network
+   # RTSNet_Pipeline = Pipeline(strTime, "RTSNet", "RTSNet")
+   # RTSNet_Pipeline.setssModel(sys_model)
+   # RTSNet_Pipeline.setModel(RTSNet_model)
+   # RTSNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=30, learningRate=1e-3, weightDecay=1e-6) 
+   # # RTSNet_Pipeline.model = torch.load('ERTSNet/best-model_DTfull_rq3050_T2000.pt',map_location=dev)
+   # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = RTSNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results)
+   # ## Test Neural Network
+   # [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg,rtsnet_out,RunTime] = RTSNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 
 
 
@@ -196,19 +197,19 @@ for rindex in range(0, len(r)):
    ###  KNet for comparison ###
    ############################
    # KNet without model mismatch
-   # modelFolder = 'KNet' + '/'
-   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   # KNet_Pipeline.setssModel(sys_model)
-   # KNet_model = KalmanNetNN()
-   # KNet_model.Build(sys_model)
-   # KNet_Pipeline.setModel(KNet_model)
-   # KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=5e-3, weightDecay=1e-4)
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_EKF_unsupervised(strTime, "KNet", "KalmanNet")
+   KNet_Pipeline.setssModel(sys_model)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=1e-3, weightDecay=1e-4)
 
-   # # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
 
-   # KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-   # KNet_Pipeline.save()
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
    
    # KNet with model mismatch
    ## Build Neural Network
