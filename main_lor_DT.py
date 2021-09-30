@@ -197,18 +197,18 @@ for rindex in range(0, len(r)):
    ###  KNet for comparison ###
    ############################
    # KNet without model mismatch
-   modelFolder = 'KNet' + '/'
-   KNet_Pipeline = Pipeline_EKF_unsupervised(strTime, "KNet", "KalmanNet")
-   KNet_Pipeline.setssModel(sys_model)
    KNet_model = KalmanNetNN()
-   KNet_model.Build(sys_model)
+   KNet_model.NNBuild(sys_model)
+   ## Train Neural Network
+   KNet_Pipeline = Pipeline_EKF_unsupervised(strTime, "KNet", "KalmanNet")
    KNet_Pipeline.setModel(KNet_model)
-   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=1e-3, weightDecay=1e-4)
+   KNet_Pipeline.setssModel(sys_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
+   ## Test Neural Network
+   # KNet_Pipeline.model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
+   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
 
-   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
-
-   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
    KNet_Pipeline.save()
    
    # KNet with model mismatch
