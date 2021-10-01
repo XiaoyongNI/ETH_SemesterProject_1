@@ -321,17 +321,15 @@ class Pipeline_EKF:
             for t in range(0, SysModel.T_test):
                 x_Net_mdl_tst[:,t] = Model(y_mdl_tst[:,t])
                      
-            MSE_test_linear_arr[j, :, :] = loss_fn(x_Net_mdl_tst, test_target[j, :, :]).item()
-            
-            error_covariance = torch.mm((torch.mm((torch.eye(SysModel.m) - Model.KGain_array),Model.KGain_array)),torch.inverse(torch.eye(SysModel.m) - Model.KGain_array))
-            cov_trace = torch.trace(error_covariance)
-            trace_avg = torch.add(cov_trace, trace_avg)
-
+            MSE_test_linear_arr[j, :, :] = loss_fn(x_Net_mdl_tst, test_target[j, :, :])
 
         # Average
         MSE_test_avg = torch.mean(MSE_test_linear_arr, [0,1])
 
-        trace_avg /= N_T
+        for j in range(0, SysModel.T_test):
+            error_covariance = torch.mm((torch.mm((torch.eye(SysModel.m) - Model.KGain_array[j,:,:]),Model.KGain_array[j,:,:])),torch.inverse(torch.eye(SysModel.m) - Model.KGain_array[j,:,:]))
+            cov_trace = torch.trace(error_covariance)
+            trace_avg[j] = cov_trace
 
         self.MSE_test_dB_avg = 10 * torch.log10(MSE_test_avg)
         self.trace_dB_avg = 10* torch.log10(trace_avg)
