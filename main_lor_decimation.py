@@ -11,7 +11,7 @@ from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 
-from KalmanNet_nn import KalmanNetNN
+from Extended_KalmanNet_nn import KalmanNetNN
 from RTSNet_nn import RTSNetNN
 
 # from PF_test import PFTest

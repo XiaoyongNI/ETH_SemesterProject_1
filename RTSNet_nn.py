@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 
-from KalmanNet_nn import KalmanNetNN
+from Extended_KalmanNet_nn import KalmanNetNN
 
 if torch.cuda.is_available():
     dev = torch.device("cuda:0")
