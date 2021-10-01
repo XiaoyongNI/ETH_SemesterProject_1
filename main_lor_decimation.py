@@ -11,7 +11,7 @@ from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 
-from Extended_KalmanNet_nn import KalmanNetNN
+from KalmanNet_nn import KalmanNetNN
 from RTSNet_nn import RTSNetNN
 
 # from PF_test import PFTest
@@ -27,11 +27,11 @@ from parameters import T, T_test, m1x_0, m2x_0, m, n,delta_t_gen,delta_t
 from model import f, h, fInacc, hInacc, fRotate
 
 if torch.cuda.is_available():
-   cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+   dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
    torch.set_default_tensor_type('torch.cuda.FloatTensor')
    print("Running on the GPU")
 else:
-   cuda0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
 
@@ -56,7 +56,7 @@ sequential_training = False
 path_results = 'KNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data/'
 data_gen = 'data_gen.pt'
-data_gen_file = torch.load(DatafolderName+data_gen, map_location=cuda0)
+data_gen_file = torch.load(DatafolderName+data_gen, map_location=dev)
 [true_sequence] = data_gen_file['All Data']
 
 r = torch.tensor([1.])
@@ -123,13 +123,13 @@ for rindex in range(0, len(r)):
    # print(f"MSE PF J=2: {MSE_PF_dB_avg} [dB] (T = {T_test})")
    
    # EKF
-   print("Start EKF test")
+   # print("Start EKF test")
    # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKF_test.EKFTest(sys_model_true, test_input, test_target)
    # print(f"MSE EKF J=5: {MSE_EKF_dB_avg} [dB] (T = {T_test})")
    # [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKF_test.EKFTest(sys_model, test_input, test_target)
    # print(f"MSE EKF J=2: {MSE_EKF_dB_avg_partial} [dB] (T = {T_test})")
 
-   [MSE_EKF_dB_avg, trace_dB_avg] = EKF_test.EKFTest_evol(sys_model, test_input, test_target)
+   # [MSE_EKF_dB_avg, trace_dB_avg] = EKF_test.EKFTest_evol(sys_model, test_input, test_target)
 
    # # MB Extended RTS
    # print("Start RTS test")
@@ -140,11 +140,11 @@ for rindex in range(0, len(r)):
    
    # KNet with model mismatch
    # ## Build Neural Network
-   KNet_model = KalmanNetNN()
-   KNet_model.NNBuild(sys_model)
-   ## Train Neural Network
-   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   KNet_Pipeline.setModel(KNet_model)
+   # KNet_model = KalmanNetNN()
+   # KNet_model.NNBuild(sys_model)
+   # ## Train Neural Network
+   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   # KNet_Pipeline.setModel(KNet_model)
    # KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
    # [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = KNet_Pipeline.NNTrain(sys_model, cv_input_long, cv_target_long, train_input, train_target, path_results, sequential_training)
    ## Test Neural Network
@@ -152,11 +152,18 @@ for rindex in range(0, len(r)):
    # [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = KNet_Pipeline.NNTest(sys_model, test_input, test_target, path_results)
    # # Print MSE Cross Validation
    # print("MSE Test:", MSE_test_dB_avg, "[dB]")
-   [MSE_test_dB_avg,trace_dB_avg] = KNet_Pipeline.NNTest_evol(sys_model, test_input, test_target, path_results)
+   # [MSE_knet_test_dB_avg,trace_knet_dB_avg] = KNet_Pipeline.NNTest_evol(sys_model, test_input, test_target, path_results)
    PlotfolderName = path_results
+   MSE_resultName = "error_evol"
+   error_evol = torch.load(PlotfolderName+MSE_resultName, map_location=dev)
+   print(error_evol.keys())
+   MSE_knet_test_dB_avg = error_evol['MSE_knet']
+   trace_knet_dB_avg = error_evol['trace_knet']
+   MSE_EKF_dB_avg = error_evol['MSE_EKF']
+   trace_dB_avg = error_evol['trace_EKF']
    Plot = Plot(PlotfolderName, modelName='KNet')
    print("Plot")
-   Plot.error_evolution(MSE_test_dB_avg,trace_dB_avg,MSE_EKF_dB_avg, trace_dB_avg)
+   Plot.error_evolution(MSE_knet_test_dB_avg,trace_knet_dB_avg,MSE_EKF_dB_avg, trace_dB_avg)
 
    # RTSNet with model mismatch
    ## Build Neural Network

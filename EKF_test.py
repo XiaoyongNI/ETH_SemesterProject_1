@@ -57,7 +57,7 @@ def EKFTest_evol(SysModel, test_input, test_target, modelKnowledge = 'full'):
     EKF = ExtendedKalmanFilter(SysModel, modelKnowledge)
     EKF.InitSequence(SysModel.m1x_0, SysModel.m2x_0)
 
-    KG_array = torch.empty([N_T, SysModel.m, SysModel.n, SysModel.T_test])
+    KG_array = torch.empty([N_T, SysModel.T_test, SysModel.m, SysModel.n])
     KG_trace = torch.empty([SysModel.T_test])
     EKF_out = torch.empty([N_T, SysModel.m, SysModel.T_test])
     
@@ -71,7 +71,7 @@ def EKFTest_evol(SysModel, test_input, test_target, modelKnowledge = 'full'):
 
     KG_avg = torch.mean(KG_array,0)
     for j in range(0, SysModel.T_test):
-        KG_trace[j] = torch.trace(KG_avg[:,:,j])
+        KG_trace[j] = torch.trace(KG_avg[j,:,:])
 
     MSE_EKF_linear_avg = torch.mean(MSE_EKF_linear_arr, [0,1])
     MSE_EKF_dB_avg = 10 * torch.log10(MSE_EKF_linear_avg)

@@ -13,7 +13,7 @@ from Pipeline_EKF_unsupervised import Pipeline_EKF_unsupervised
 
 from datetime import datetime
 
-from Extended_KalmanNet_nn import KalmanNetNN
+from KalmanNet_nn import KalmanNetNN
 from RTSNet_nn import RTSNetNN
 
 from Plot import Plot_extended as Plot

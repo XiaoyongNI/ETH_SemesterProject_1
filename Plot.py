@@ -20,7 +20,7 @@ else:
 Klegend = ["KNet - Train", "KNet - Validation", "KNet - Test", "Kalman Filter"]
 RTSlegend = ["RTSNet - Train", "RTSNet - Validation", "RTSNet - Test", "RTS Smoother","Kalman Filter"]
 ERTSlegend = ["RTSNet - Train","RTSNet - Validation", "RTSNet - Test", "RTS","EKF"]
-error_evol = ["KNet Empirical Error","KNet Covariance Trace","KF Empirical Error","KF Covariance Trace"]
+error_evol = ["KNet Empirical Error","KNet Covariance Trace","KF Empirical Error","KF Covariance Trace","KNet Error Deviation","EKF Error Deviation"]
 # Color
 KColor = ['-ro', 'k-', 'b-','g-']
 RTSColor = ['red','darkorange','g-', 'b-']
@@ -773,23 +773,33 @@ class Plot_extended(Plot_RTS):
         fileName = self.folderName + 'error_evolution'
         fontSize = 32
         # Figure
-        plt.figure(figsize = (25, 10))
+        fig, axs = plt.subplots(2, figsize = (25, 10))
         # x_axis
         x_plt = range(0, MSE_Net.size()[0])
-
+        ## Figure 1: Error
         # Net
-        y_plt1 = MSE_Net
-        plt.plot(x_plt, y_plt1, '-bo', label=error_evol[0])
-        y_plt2 = trace_Net
-        plt.plot(x_plt, y_plt2, '--bo', label=error_evol[1])
+        y_plt1 = MSE_Net.detach().numpy()
+        axs[0].plot(x_plt, y_plt1, '-bo', label=error_evol[0])
+        y_plt2 = trace_Net.detach().numpy()
+        axs[0].plot(x_plt, y_plt2, '--yo', label=error_evol[1])
         # EKF
-        y_plt3 = MSE_KF
-        plt.plot(x_plt, y_plt3, '-ro', label=error_evol[2])
-        y_plt4 = trace_KF
-        plt.plot(x_plt, y_plt4, '--ro', label=error_evol[3])
+        y_plt3 = MSE_KF.detach().numpy()
+        axs[0].plot(x_plt, y_plt3, '-ro', label=error_evol[2])
+        y_plt4 = trace_KF.detach().numpy()
+        axs[0].plot(x_plt, y_plt4, '--go', label=error_evol[3])
+        axs[0].legend(loc="upper right")
 
-        plt.legend(fontsize=fontSize)
-        plt.xlabel('Timestep', fontsize=fontSize)
-        plt.ylabel('Error [dB]', fontsize=fontSize)
-        plt.grid(True)
-        plt.savefig(fileName)
+        ## Figure 2: Error Deviation
+        # Net
+        y_plt5 = MSE_Net.detach().numpy() - trace_Net.detach().numpy()
+        axs[1].plot(x_plt, y_plt5, '-bo', label=error_evol[4])
+        # EKF
+        y_plt6 = MSE_KF.detach().numpy() - trace_KF.detach().numpy()
+        axs[1].plot(x_plt, y_plt6, '-ro', label=error_evol[5])
+        axs[1].legend(loc="upper right")
+        
+        axs[0].set(xlabel='Timestep', ylabel='Error [dB]')
+        axs[1].set(xlabel='Timestep', ylabel='Error Deviation[dB]')
+        axs[0].grid(True)
+        axs[1].grid(True)
+        fig.savefig(fileName)
