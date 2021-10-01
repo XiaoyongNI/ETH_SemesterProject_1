@@ -6,15 +6,16 @@ import os
 from scipy.signal import find_peaks
 os.environ["KMP_DUPLICATE_LIB_OK"]  =  "TRUE"
 device = torch.device('cpu')
-q = 0
-delta_t = 0.02
-m = 2
-# Q = q * q * torch.tensor([[(delta_t**3)/3, (delta_t**2)/2],
-#                           [(delta_t**2)/2, delta_t]])
-Q = q * q * torch.eye(m)
-print(Q)
-if torch.all(Q.bool())==0:
-    print(torch.all(Q.bool()))
+
+# q = 0
+# delta_t = 0.02
+# m = 2
+# # Q = q * q * torch.tensor([[(delta_t**3)/3, (delta_t**2)/2],
+# #                           [(delta_t**2)/2, delta_t]])
+# Q = q * q * torch.eye(m)
+# print(Q)
+# if torch.all(Q.bool())==0:
+#     print(torch.all(Q.bool()))
 # mean = torch.zeros([m])
 # distrib = MultivariateNormal(loc=mean, covariance_matrix=Q)
 
@@ -63,3 +64,11 @@ if torch.all(Q.bool())==0:
 # DatafolderName = 'Simulations/Pendulum/results/transfer/traj' + '/'
 # file_name = DatafolderName+'test_RTSNet.png'
 # plt.savefig(file_name)
+
+## MSE test
+loss = torch.nn.MSELoss(reduction='none')
+input = torch.randn(10, 3, 15)
+target = torch.randn(10, 3, 15)
+output = loss(input, target)
+MSE_test_linear_avg = torch.mean(output,[0,1])
+print(MSE_test_linear_avg.size())

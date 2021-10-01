@@ -20,6 +20,7 @@ else:
 Klegend = ["KNet - Train", "KNet - Validation", "KNet - Test", "Kalman Filter"]
 RTSlegend = ["RTSNet - Train", "RTSNet - Validation", "RTSNet - Test", "RTS Smoother","Kalman Filter"]
 ERTSlegend = ["RTSNet - Train","RTSNet - Validation", "RTSNet - Test", "RTS","EKF"]
+error_evol = ["KNet Empirical Error","KNet Covariance Trace","KF Empirical Error","KF Covariance Trace"]
 # Color
 KColor = ['-ro', 'k-', 'b-','g-']
 RTSColor = ['red','darkorange','g-', 'b-']
@@ -766,4 +767,29 @@ class Plot_extended(Plot_RTS):
         plt.yticks(fontsize=20)
         # plt.title('MSE vs inverse noise variance with inaccurate SS knowledge', fontsize=32)
         plt.grid(True)         
+        plt.savefig(fileName)
+
+    def error_evolution(self,MSE_Net, trace_Net,MSE_KF, trace_KF):
+        fileName = self.folderName + 'error_evolution'
+        fontSize = 32
+        # Figure
+        plt.figure(figsize = (25, 10))
+        # x_axis
+        x_plt = range(0, MSE_Net.size()[0])
+
+        # Net
+        y_plt1 = MSE_Net
+        plt.plot(x_plt, y_plt1, '-bo', label=error_evol[0])
+        y_plt2 = trace_Net
+        plt.plot(x_plt, y_plt2, '--bo', label=error_evol[1])
+        # EKF
+        y_plt3 = MSE_KF
+        plt.plot(x_plt, y_plt3, '-ro', label=error_evol[2])
+        y_plt4 = trace_KF
+        plt.plot(x_plt, y_plt4, '--ro', label=error_evol[3])
+
+        plt.legend(fontsize=fontSize)
+        plt.xlabel('Timestep', fontsize=fontSize)
+        plt.ylabel('Error [dB]', fontsize=fontSize)
+        plt.grid(True)
         plt.savefig(fileName)

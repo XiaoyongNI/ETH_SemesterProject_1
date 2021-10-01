@@ -228,7 +228,7 @@ class Pipeline_EKF:
     def NNTest(self, SysModel, test_input, test_target, path_results, nclt=False, rnn=False, IC=None):
 
         N_T = test_input.size()[0]
-        MSE_test_linear_arr = torch.empty([N_T])
+        self.MSE_test_linear_arr = torch.empty([N_T])
 
         # MSE LOSS Function
         loss_fn = nn.MSELoss(reduction='mean')
@@ -241,8 +241,8 @@ class Pipeline_EKF:
         Model.eval()
         torch.no_grad()
 
-        KGain_array = torch.zeros((SysModel.T_test, Model.m, Model.n))
-        x_out_array = torch.empty(N_T,SysModel.m, SysModel.T_test)
+        self.KGain_array = torch.zeros((SysModel.T_test, Model.m, Model.n))
+        self.x_out_array = torch.empty(N_T,SysModel.m, SysModel.T_test)
         
         start = time.time()
         for j in range(0, N_T):
@@ -269,29 +269,75 @@ class Pipeline_EKF:
                     mask = torch.tensor([True,False,False,True,False,False])
                 else:
                     mask = torch.tensor([True,False,True,False])
-                MSE_test_linear_arr[j] = loss_fn(x_Net_mdl_tst[mask], test_target[j, :, :]).item()
+                self.MSE_test_linear_arr[j] = loss_fn(x_Net_mdl_tst[mask], test_target[j, :, :]).item()
             else:
-                MSE_test_linear_arr[j] = loss_fn(x_Net_mdl_tst, test_target[j, :, :]).item()
-            x_out_array[j,:,:] = x_Net_mdl_tst
+                self.MSE_test_linear_arr[j] = loss_fn(x_Net_mdl_tst, test_target[j, :, :]).item()
+            self.x_out_array[j,:,:] = x_Net_mdl_tst
 
             try:
-                KGain_array = torch.add(Model.KGain_array, KGain_array)
-                KGain_array /= N_T
+                self.KGain_array = torch.add(Model.KGain_array, self.KGain_array)
+                self.KGain_array /= N_T
             except:
-                KGain_array = None
+                self.KGain_array = None
 
         end = time.time()
         t = end - start
 
         # Average
-        MSE_test_linear_avg = torch.mean(MSE_test_linear_arr)
-        MSE_test_dB_avg = 10 * torch.log10(MSE_test_linear_avg)
+        self.MSE_test_linear_avg = torch.mean(self.MSE_test_linear_arr)
+        self.MSE_test_dB_avg = 10 * torch.log10(self.MSE_test_linear_avg)
 
         # Print MSE Cross Validation
         str = self.modelName + "-" + "MSE Test:"
-        print(str, MSE_test_dB_avg, "[dB]")
+        print(str, self.MSE_test_dB_avg, "[dB]")
 
-        return [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KGain_array, x_out_array, t]
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, self.KGain_array, self.x_out_array, t]
+
+    def NNTest_evol(self, SysModel, test_input, test_target, path_results):
+
+        N_T = test_input.size()[0]
+        MSE_test_linear_arr = torch.empty(N_T,SysModel.m, SysModel.T_test)
+
+        # MSE LOSS Function
+        loss_fn = nn.MSELoss(reduction='none')
+
+        Model = torch.load(path_results+'best-model.pt', map_location=dev)
+
+        Model.eval()
+        torch.no_grad()
+
+        trace_avg = torch.zeros([SysModel.T_test])
+
+        for j in range(0, N_T):
+            Model.i = 0
+            # Unrolling Forward Pass
+            
+            Model.InitSequence(torch.unsqueeze(test_target[j, :, 0], dim=1), SysModel.m2x_0, SysModel.T_test)
+                      
+            y_mdl_tst = test_input[j, :, :]
+
+            x_Net_mdl_tst = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
+            
+            for t in range(0, SysModel.T_test):
+                x_Net_mdl_tst[:,t] = Model(y_mdl_tst[:,t])
+                     
+            MSE_test_linear_arr[j, :, :] = loss_fn(x_Net_mdl_tst, test_target[j, :, :]).item()
+            
+            error_covariance = torch.mm((torch.mm((torch.eye(SysModel.m) - Model.KGain_array),Model.KGain_array)),torch.inverse(torch.eye(SysModel.m) - Model.KGain_array))
+            cov_trace = torch.trace(error_covariance)
+            trace_avg = torch.add(cov_trace, trace_avg)
+
+
+        # Average
+        MSE_test_avg = torch.mean(MSE_test_linear_arr, [0,1])
+
+        trace_avg /= N_T
+
+        self.MSE_test_dB_avg = 10 * torch.log10(MSE_test_avg)
+        self.trace_dB_avg = 10* torch.log10(trace_avg)
+
+        return [self.MSE_test_dB_avg, self.trace_dB_avg]
+
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 
