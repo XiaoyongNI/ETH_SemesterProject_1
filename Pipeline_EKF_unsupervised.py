@@ -111,9 +111,9 @@ class Pipeline_EKF_unsupervised:
                         mask = torch.tensor([True,False,False,True,False,False])
                     else:
                         mask = torch.tensor([True,False,True,False])
-                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv[mask], cv_input[j, :, :]).item()
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv[mask], cv_target[j, :, :]).item()
                 else:
-                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv, cv_input[j, :, :]).item()
+                    MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv, cv_target[j, :, :]).item()
 
             # Average
             self.MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
