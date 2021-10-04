@@ -53,12 +53,12 @@ class Pipeline_EKF_unsupervised:
         N_CV = cv_input.size()[0]
 
         MSE_cv_linear_batch = torch.empty([N_CV]).to(dev, non_blocking=True)
-        MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
-        MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
         MSE_train_linear_batch = torch.empty([self.N_B]).to(dev, non_blocking=True)
-        MSE_train_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
-        MSE_train_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_train_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_train_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
 
         ##############
@@ -116,12 +116,12 @@ class Pipeline_EKF_unsupervised:
                     MSE_cv_linear_batch[j] = self.loss_fn(x_Net_cv, cv_input[j, :, :]).item()
 
             # Average
-            MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
-            MSE_cv_dB_epoch[ti] = 10 * torch.log10(MSE_cv_linear_epoch[ti])
+            self.MSE_cv_linear_epoch[ti] = torch.mean(MSE_cv_linear_batch)
+            self.MSE_cv_dB_epoch[ti] = 10 * torch.log10(self.MSE_cv_linear_epoch[ti])
 
-            if(MSE_cv_dB_epoch[ti] < MSE_cv_dB_opt):
+            if(self.MSE_cv_dB_epoch[ti] < MSE_cv_dB_opt):
 
-                MSE_cv_dB_opt = MSE_cv_dB_epoch[ti]
+                MSE_cv_dB_opt = self.MSE_cv_dB_epoch[ti]
                 MSE_cv_idx_opt = ti
                 if(rnn):
                     torch.save(self.model, path_results + 'best-model_rnn.pt')
@@ -184,8 +184,8 @@ class Pipeline_EKF_unsupervised:
 
 
             # Average
-            MSE_train_linear_epoch[ti] = torch.mean(MSE_train_linear_batch)
-            MSE_train_dB_epoch[ti] = 10 * torch.log10(MSE_train_linear_epoch[ti])
+            self.MSE_train_linear_epoch[ti] = torch.mean(MSE_train_linear_batch)
+            self.MSE_train_dB_epoch[ti] = 10 * torch.log10(self.MSE_train_linear_epoch[ti])
 
             ##################
             ### Optimizing ###
@@ -214,16 +214,16 @@ class Pipeline_EKF_unsupervised:
             ########################
             ### Training Summary ###
             ########################
-            print(ti, "MSE Training :", MSE_train_dB_epoch[ti], "[dB]", "MSE Validation :", MSE_cv_dB_epoch[ti], "[dB]")
+            print(ti, "MSE Training :", self.MSE_train_dB_epoch[ti], "[dB]", "MSE Validation :", self.MSE_cv_dB_epoch[ti], "[dB]")
 
             if (ti > 1):
-                d_train = MSE_train_dB_epoch[ti] - MSE_train_dB_epoch[ti - 1]
-                d_cv    = MSE_cv_dB_epoch[ti] - MSE_cv_dB_epoch[ti - 1]
+                d_train = self.MSE_train_dB_epoch[ti] - self.MSE_train_dB_epoch[ti - 1]
+                d_cv    = self.MSE_cv_dB_epoch[ti] - self.MSE_cv_dB_epoch[ti - 1]
                 print("diff MSE Training :", d_train, "[dB]", "diff MSE Validation :", d_cv, "[dB]")
 
             print("Optimal idx:", MSE_cv_idx_opt, "Optimal :", MSE_cv_dB_opt, "[dB]")
 
-        return [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch]
+        return [self.MSE_cv_linear_epoch, self.MSE_cv_dB_epoch, self.MSE_train_linear_epoch, self.MSE_train_dB_epoch]
 
     def NNTest(self, SysModel, test_input, test_target, path_results, nclt=False, rnn=False, IC=None):
 
