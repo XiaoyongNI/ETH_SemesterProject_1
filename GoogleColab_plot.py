@@ -42,7 +42,7 @@ DatafolderName = 'Simulations/Lorenz_Atractor/data/T2000_NT100' + '/'
 # TrajfolderName = 'KNet/KNet_TSP/KNet/traj/T2000/obsmis' + '/'
 TrajfolderName = 'ERTSNet/new_arch_LA/decimation/traj' + '/'
 
-PipelineResultName = 'pipeline_KalmanNet_test.pt'
+PipelineResultName = 'pipeline_KalmanNet_unsupervised_-8dB.pt'
 EKFResultName = 'KF_rq020_T100' 
 # DataResultName = 'data_lor_v20_rq1030_T2000.pt' 
 TrajResultName = 'Wellingstraj_lor_dec_all_r0.png'
