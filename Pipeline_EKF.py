@@ -290,6 +290,8 @@ class Pipeline_EKF:
         # Print MSE Cross Validation
         str = self.modelName + "-" + "MSE Test:"
         print(str, self.MSE_test_dB_avg, "[dB]")
+        # Print Run Time
+        print("Inference Time:", t)
 
         return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, self.KGain_array, self.x_out_array, t]
 
