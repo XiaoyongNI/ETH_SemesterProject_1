@@ -62,9 +62,10 @@ class Plot:
         plt.plot(x_plt, y_plt4, KColor[3], label=Klegend[3])
 
         plt.legend(fontsize=fontSize)
-        plt.xlabel('Number of Training Epochs', fontsize=fontSize)
+        plt.xlabel('Number of Training Iterations', fontsize=fontSize)
         plt.ylabel('MSE Loss Value [dB]', fontsize=fontSize)
-        plt.title(self.modelName + ":" + "MSE Loss [dB] - per Epoch", fontsize=fontSize)
+        plt.grid(True)
+        # plt.title(self.modelName + ":" + "MSE Loss [dB] - per Epoch", fontsize=fontSize)
         plt.savefig(fileName)
 
 
