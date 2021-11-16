@@ -17,7 +17,7 @@ else:
    print("Running on the CPU")
 
 # Legend
-Klegend = ["KNet - Train", "KNet - Validation", "KNet - Test", "Kalman Filter"]
+Klegend = ["Unsupervised KalmanNet - Train", "Unsupervised KalmanNet - Validation", "Unsupervised KalmanNet - Test", "Kalman Filter"]
 RTSlegend = ["RTSNet - Train", "RTSNet - Validation", "RTSNet - Test", "RTS Smoother","Kalman Filter"]
 ERTSlegend = ["RTSNet - Train","RTSNet - Validation", "RTSNet - Test", "RTS","EKF"]
 error_evol = ["KNet Empirical Error","KNet Covariance Trace","KF Empirical Error","KF Covariance Trace","KNet Error Deviation","EKF Error Deviation"]
@@ -60,7 +60,9 @@ class Plot:
         # KF
         y_plt4 = MSE_KF_dB_avg * torch.ones(N_Epochs_plt)
         plt.plot(x_plt, y_plt4, KColor[3], label=Klegend[3])
-
+        
+        plt.xticks(fontsize= fontSize)
+        plt.yticks(fontsize= fontSize)
         plt.legend(fontsize=fontSize)
         plt.xlabel('Number of Training Iterations', fontsize=fontSize)
         plt.ylabel('MSE Loss Value [dB]', fontsize=fontSize)
