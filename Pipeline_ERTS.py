@@ -102,6 +102,7 @@ class Pipeline_ERTS:
                     init_conditions = SysModel.m1x_0
 
                 y_training = train_input[n_e, :, :]
+                SysModel.T = y_training.size()[-1]
                 self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T)
                 x_out_training_forward = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
                 x_out_training = torch.empty(SysModel.m, SysModel.T).to(dev, non_blocking=True)
@@ -184,8 +185,9 @@ class Pipeline_ERTS:
                     else:
                         init_conditions = SysModel.m1x_0
 
-                    self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)   
                     y_cv = cv_input[j, :, :]
+                    SysModel.T_test = y_cv.size()[-1]
+                    self.model.InitSequence(init_conditions, SysModel.m2x_0, SysModel.T_test)                  
 
                     x_out_cv_forward = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
                     x_out_cv = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)
@@ -259,18 +261,19 @@ class Pipeline_ERTS:
 
         torch.no_grad()
 
-        x_out_array = torch.empty(self.N_T,SysModel.m, SysModel.T_test)
+        x_out_array = torch.zeros_like(test_input)
         start = time.time()
         for j in range(0, self.N_T):
+
+            y_mdl_tst = test_input[j, :, :]
+            SysModel.T_test = y_mdl_tst.size()[-1]
             if nclt:
                 self.model.InitSequence(SysModel.m1x_0, SysModel.m2x_0, SysModel.T_test)
             elif IC is None:
                 self.model.InitSequence(torch.unsqueeze(test_target[j, :, 0], dim=1), SysModel.m2x_0, SysModel.T_test)
             else:
                 init_cond = torch.reshape(IC[j, :], SysModel.m1x_0.shape)
-                self.model.InitSequence(init_cond, SysModel.m2x_0, SysModel.T_test)
-
-            y_mdl_tst = test_input[j, :, :]
+                self.model.InitSequence(init_cond, SysModel.m2x_0, SysModel.T_test)         
 
             x_out_test_forward_1 = torch.empty(SysModel.m,SysModel.T_test).to(dev, non_blocking=True)
             x_out_test = torch.empty(SysModel.m, SysModel.T_test).to(dev, non_blocking=True)

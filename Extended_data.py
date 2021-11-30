@@ -1,6 +1,8 @@
 import torch
+torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
 import math
 import os
+import numpy as np
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 if torch.cuda.is_available():
@@ -10,9 +12,9 @@ else:
    dev = torch.device("cpu")
    print("Running on the CPU")
 
-#######################
-### Size of DataSet ###
-#######################
+########################
+### Basic Parameters ###
+########################
 
 # Number of Training Examples
 N_E = 300
@@ -26,9 +28,11 @@ N_T = 10
 T = 100
 T_test = 100
 
-#################
-## Design #10 ###
-#################
+
+
+####################
+## Canonical F,H ###
+####################
 F10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                     [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                     [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -50,6 +54,10 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
                     [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                     [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+
+#################
+## KITTI F, H ###
+#################
 
 ############
 ## 2 x 2 ###
@@ -187,12 +195,14 @@ def Decimate_and_perturbate_Data(true_process, delta_t, delta_t_mod, N_examples,
 def getObs(sequences, h):
     i = 0
     sequences_out = torch.zeros_like(sequences)
+    # sequences_out = torch.zeros_like(sequences)
     for sequence in sequences:
         for t in range(sequence.size()[1]):
             sequences_out[i,:,t] = h(sequence[:,t])
     i = i+1
 
     return sequences_out
+
 
 def Short_Traj_Split(data_target, data_input, T):
     data_target = list(torch.split(data_target,T,2))
